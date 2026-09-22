@@ -1,0 +1,36 @@
+# systemd unit for the collector. One per writer.
+#   sudo cp deploy/savefly-ingest.service /etc/systemd/system/savefly-a.service
+#   sudo systemctl enable --now savefly-a
+#
+# A gap in the log cannot be repaired, hence Restart=always and a short
+# RestartSec: every second of downtime is lost events.
+[Unit]
+Description=SAVEFLY ingest (writer A)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=savefly
+WorkingDirectory=/opt/savefly
+Environment=NODE_ENV=production
+Environment=CFG=/opt/savefly/ingest/config.json
+ExecStart=/usr/bin/node ingest/ingest.js
+Restart=always
+RestartSec=2
+StartLimitBurst=0
+
+# healthcheck: if the log goes stale, systemd restarts the service
+ExecStartPost=/bin/sh -c 'sleep 90'
+WatchdogSec=0
+
+StandardOutput=append:/var/log/savefly/ingest-a.log
+StandardError=append:/var/log/savefly/ingest-a.log
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/savefly/data /var/log/savefly
+
+[Install]
+WantedBy=multi-user.target

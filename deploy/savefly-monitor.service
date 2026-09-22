@@ -1,0 +1,19 @@
+# Monitoring. Exits with code 1 on a problem, so systemd
+# restarts it and it shows up in journalctl; with --webhook it posts
+# to Slack/Discord.
+[Unit]
+Description=SAVEFLY log monitor
+After=savefly-a.service
+
+[Service]
+Type=simple
+User=savefly
+WorkingDirectory=/opt/savefly
+ExecStart=/usr/bin/node tools/monitor.js data --watch
+Restart=always
+RestartSec=30
+StandardOutput=append:/var/log/savefly/monitor.log
+StandardError=append:/var/log/savefly/monitor.log
+
+[Install]
+WantedBy=multi-user.target

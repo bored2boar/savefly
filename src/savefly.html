@@ -1,0 +1,2909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAVEFLY</title>
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SAVEFLY">
+  <meta property="og:description" content="A fly in a web, wrapped by the market. Sells spawn spiders, buys shoot them down. Every viewer sees the same fly - the state is derived from the on-chain trade log.">
+  <meta property="og:image" content="og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SAVEFLY">
+  <meta name="twitter:description" content="Sells spawn spiders, buys shoot them down. State derived from the chain.">
+  <meta name="twitter:image" content="og.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23120c1c'/%3E%3Ccircle cx='8' cy='9' r='3.4' fill='%2358d8b0'/%3E%3Ccircle cx='6.3' cy='5.6' r='1.5' fill='%23f04858'/%3E%3Ccircle cx='9.7' cy='5.6' r='1.5' fill='%23f04858'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#120c1c; --pan:#241a34; --pan2:#33244a; --edge:#0a0612;
+  --ink:#f4ecff; --dim:#b8a4d0; --faint:#7a6494;
+  --silk:#e8e0f4; --spid:#c83848; --fly:#58d8b0; --eye:#f04858;
+  --sun:#ffc838; --sky:#70b8f0; --lil:#c090e8; --grn:#7ce060;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0612;
+  background-image:
+    linear-gradient(90deg,rgba(192,144,232,.05) 1px,transparent 1px),
+    linear-gradient(rgba(192,144,232,.05) 1px,transparent 1px);
+  background-size:8px 8px;
+  color:var(--ink);font:13px/1.5 ui-monospace,"Courier New",monospace;
+  min-height:100vh;display:flex;justify-content:center;padding:16px}
+.wrap{width:100%;max-width:1320px;display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:14px;align-items:start}
+@media(max-width:1000px){.wrap{grid-template-columns:1fr}}
+.panel{background:var(--pan);border:3px solid var(--edge);box-shadow:6px 6px 0 var(--edge)}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;
+  border-bottom:3px solid var(--edge);background:var(--pan2)}
+.brand{display:flex;align-items:center;gap:9px}
+.dot{width:14px;height:14px;background:var(--eye);flex:none;
+  box-shadow:6px 0 0 var(--eye),3px -5px 0 var(--fly),-3px 6px 0 var(--fly),9px 6px 0 var(--fly)}
+.logo{font-size:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:#fff;text-shadow:2px 2px 0 var(--edge)}
+.logo b{color:var(--eye)}
+.tick{font-size:11px;font-weight:700;color:var(--edge);background:var(--sky);
+  padding:4px 7px;border:2px solid var(--edge);letter-spacing:.06em;text-transform:uppercase}
+.tick.alt{background:var(--sun)}
+.tick.warn{background:var(--spid);color:#fff}
+.stage{position:relative;line-height:0;background:#120c1c;border-bottom:3px solid var(--edge)}
+canvas{width:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+#scan{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(10,6,18,.26) 0 1px,transparent 1px 3px)}
+.ovl{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:10px}
+.ovlTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card{background:rgba(10,6,18,.84);border:2px solid var(--edge);padding:6px 9px;line-height:1.3;max-width:46%}
+.card .ttl{font-size:9px;letter-spacing:.06em;color:var(--sun);font-weight:700;text-transform:uppercase}
+.card .nm{font-size:14px;font-weight:700;color:#fff;text-shadow:1px 1px 0 var(--edge)}
+.card .sub{font-size:10px;color:var(--dim);margin-top:2px}
+.cardR{text-align:right}
+.cardR .m{font-size:14px;font-weight:700;text-transform:uppercase;text-shadow:1px 1px 0 var(--edge)}
+.cardR .e{font-size:9.5px;margin-top:2px;color:var(--dim)}
+.ovlBot{display:flex;flex-direction:column;gap:5px}
+.barRow{display:flex;align-items:center;gap:9px;background:rgba(10,6,18,.84);
+  border:2px solid var(--edge);padding:5px 9px}
+.barRow .lbl{font-size:9px;letter-spacing:.1em;font-weight:700;flex:none;min-width:34px}
+.track{display:block;height:9px;background:var(--edge);flex:1 1 auto;border:2px solid var(--edge)}
+.fill{display:block;height:100%;width:100%;transition:width .3s steps(6),background .4s}
+.barRow .val{font-size:10.5px;font-weight:700;color:#fff;flex:none;min-width:38px;text-align:right}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);background:var(--pan2)}
+.stat{padding:8px 7px;border-right:2px solid var(--edge)}
+.stat:last-child{border-right:0}
+.stat .k{font-size:8.5px;color:var(--sun);letter-spacing:.06em;font-weight:700;text-transform:uppercase}
+.stat .v{font-size:13px;margin-top:2px;font-weight:700}
+#logPanel{display:flex;flex-direction:column;max-height:760px}
+#necroPanel{display:none;flex-direction:column}
+#necroPanel.on{display:flex}
+#necroHead{padding:9px 12px;border-bottom:3px solid var(--edge);display:flex;
+  justify-content:space-between;align-items:center;background:var(--pan2)}
+#necroHead span:first-child{font-size:11px;color:var(--sun);letter-spacing:.08em;
+  font-weight:700;text-transform:uppercase}
+#necro{overflow-y:auto;padding:8px;max-height:330px}
+.tomb{background:#241a34;border:2px solid var(--edge);border-left:4px solid var(--sr1);
+  padding:6px 8px;margin-bottom:7px}
+.tomb .g{font-size:10px;color:var(--faint);letter-spacing:.06em}
+.tomb .n{font-size:12px;font-weight:700;color:var(--gy0);margin:1px 0 2px}
+.tomb .m{font-size:10px;color:var(--faint);line-height:1.5}
+.tomb .m b{color:var(--gy0);font-weight:700}
+#necroEmpty{font-size:11px;color:var(--faint);padding:4px 2px;line-height:1.5}
+#logHead{padding:9px 12px;border-bottom:3px solid var(--edge);display:flex;
+  justify-content:space-between;align-items:center;background:var(--pan2)}
+#logHead span:first-child{font-size:11px;color:var(--sun);letter-spacing:.08em;font-weight:700;text-transform:uppercase}
+#log{overflow-y:auto;padding:8px;flex:1;min-height:0;max-height:700px}
+#log::-webkit-scrollbar{width:8px}
+#log::-webkit-scrollbar-thumb{background:var(--lil);border:2px solid var(--edge)}
+.ev{background:#2c2040;border:2px solid var(--edge);padding:6px 8px;margin-bottom:7px;
+  animation:pop .12s steps(3)}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}}
+.ev .t{font-size:9px;color:var(--faint)}
+.ev .h{font-size:11px;font-weight:700;margin-top:1px;text-transform:uppercase}
+.ev .d{font-size:10.5px;color:#d8c8ec;line-height:1.45;margin-top:2px}
+button.ico{padding:5px 8px;font-size:13px;line-height:1;background:#3d5878;color:var(--ink)}
+button.ico.on{background:var(--grn);color:var(--edge)}
+.ca{font-size:10px;color:var(--faint);cursor:pointer;font-family:ui-monospace,monospace;
+  max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ca:hover{color:var(--ink)}
+#feedBadge{font-size:10px;font-weight:700;color:var(--edge);background:var(--sun);
+  padding:3px 7px;border:2px solid var(--edge);letter-spacing:.06em;text-transform:uppercase}
+.warnbox{background:#3a2040;border:2px solid var(--edge);border-left:6px solid var(--lil);
+  padding:8px 10px;margin-top:10px;font-size:10.5px;line-height:1.5;color:#e8d8f8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="bar">
+      <div class="brand">
+        <span class="dot"></span>
+        <span class="logo">Save<b>Fly</b></span>
+        <span class="tick alt">$SAVEFLY</span>
+        <span id="feedBadge">starting</span>
+        <span class="ca" id="ca" title="contract address - click to copy"></span>
+      </div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <span class="tick" id="live">ALIVE</span>
+        <button id="sndBtn" class="ico" onclick="toggleSound()" title="sound">&#9834;</button>
+        <button class="ico" onclick="toggleFS()" title="fullscreen">&#9974;</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <canvas id="cv" width="320" height="224"></canvas>
+      <div id="scan"></div>
+      <div class="ovl">
+        <div class="ovlTop">
+          <div class="card">
+            <div class="ttl" id="ftitle">Her Web-Bound Grace</div>
+            <div class="nm" id="fname">Musca Liquidata III</div>
+            <div class="sub" id="gnum">Gen #1 &middot; age 0h</div>
+          </div>
+          <div class="card cardR">
+            <div class="m" id="moodTxt" style="color:#7ce060">calm</div>
+            <div class="e" id="stageTxt">free</div>
+            <div class="e" id="spidTxt">0 spiders</div>
+            <div class="e" id="syncTxt" style="color:#7ce060">SYNCED 00000000</div>
+          </div>
+        </div>
+        <div class="ovlBot">
+          <div class="barRow">
+            <span class="lbl" style="color:#e8e0f4">SILK</span>
+            <div class="track"><div class="fill" id="sbar" style="background:#e8e0f4"></div></div>
+            <span class="val" id="sval">0%</span>
+          </div>
+          <div class="barRow">
+            <span class="lbl" style="color:#7ce060">PRICE</span>
+            <div class="track"><div class="fill" id="mbar" style="background:#7ce060"></div></div>
+            <span class="val" id="mval">100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Price</div><div class="v" id="mc">--</div></div>
+      <div class="stat"><div class="k">Drawdown</div><div class="v" id="ath">0%</div></div>
+      <div class="stat"><div class="k">Saved</div><div class="v" id="killv" style="color:#7ce060">0</div></div>
+      <div class="stat"><div class="k">Bites</div><div class="v" id="bitev" style="color:#c83848">0</div></div>
+      <div class="stat"><div class="k">Tx/min</div><div class="v" id="txr">0</div></div>
+      <div class="stat"><div class="k">Web</div><div class="v" id="webv">calm</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="necroPanel">
+    <div id="necroHead"><span>Necropolis</span><span class="tick" id="necroCount">0</span></div>
+    <div id="necro"><div id="necroEmpty">No generations lost yet.</div></div>
+  </div>
+
+  <div class="panel" id="logPanel">
+    <div id="logHead"><span>Event log</span><span class="tick" id="logCount">0</span></div>
+    <div id="log"></div>
+  </div>
+</div>
+
+
+<script>
+const RW=320,RH=224,SC=3;
+const CVE=document.getElementById('cv');
+CVE.width=RW;CVE.height=RH;
+const P2D=CVE.getContext('2d');
+P2D.imageSmoothingEnabled=false;
+
+
+const C={
+  n0:'#3c2c54',n1:'#302444',n2:'#241a34',n3:'#1a1228',n4:'#120c1c',n5:'#0a0612',
+  wd0:'#6c4c34',wd1:'#4c3424',wd2:'#342414',
+  sk0:'#fffaf4',sk1:'#e8e0f4',sk2:'#c4b4d8',sk3:'#9484ac',
+  fl0:'#8cf0cc',fl1:'#58d8b0',fl2:'#349070',fl3:'#1c5c48',
+  ey0:'#ff8894',ey1:'#f04858',ey2:'#a82838',ey3:'#601420',
+  sp0:'#a06050',sp1:'#6c3830',sp2:'#40201c',sp3:'#241010',
+  sr0:'#ff6474',sr1:'#c83848',
+  g0:'#b8f89c',g1:'#7ce060',g2:'#4ca038',g3:'#2c6822',
+  y0:'#fff0a0',y1:'#ffc838',y2:'#d89020',
+  wht:'#fffef4',gy0:'#d0c8e0',gy1:'#9488ac',gy2:'#645878',gy3:'#3c3450',
+  lil:'#c090e8',sky:'#70b8f0',ink:'#0a0612'
+};
+
+/* ── PIXEL LAYER ──────────────────────────────────────────────
+   We draw into our own Uint32 buffer and hand it over with one
+   putImageData per frame. It used to be hundreds of small fillRects:
+   measured x16 difference on 2000 segments.
+   Function signatures are intentionally unchanged - the drawing code stays
+   as it was.
+   ──────────────────────────────────────────────────────────── */
+const IMG=P2D.createImageData(RW,RH);
+const SCREEN={w:RW,h:RH,buf:new Uint32Array(IMG.data.buffer)};
+let FB=SCREEN;                 // current draw target
+let OFFX=0,OFFY=0;             // offset (shake)
+function mkFB(w,h){return{w,h,buf:new Uint32Array(w*h)};}
+function fbClear(f){f.buf.fill(0);}
+
+// ── colors: CSS string -> 0xAABBGGRR, cached ──
+const CC=new Map();
+function hx(s,i,n){return parseInt(s.substr(i,n),16);}
+function col(c){
+  if(typeof c==='number')return c;
+  let v=CC.get(c);
+  if(v!==undefined)return v;
+  let r=0,g=0,b=0,a=255;
+  if(c.charCodeAt(0)===35){
+    if(c.length===4){r=hx(c,1,1)*17;g=hx(c,2,1)*17;b=hx(c,3,1)*17;}
+    else{r=hx(c,1,2);g=hx(c,3,2);b=hx(c,5,2);
+      if(c.length===9)a=hx(c,7,2);}
+  }else if(c.startsWith('rgb')){
+    const m=c.match(/-?[\d.]+/g);
+    r=+m[0];g=+m[1];b=+m[2];if(m[3]!==undefined)a=Math.round(+m[3]*255);
+  }else if(c.startsWith('hsl')){
+    const m=c.match(/-?[\d.]+/g);
+    let H=((+m[0])%360+360)%360/360,S=+m[1]/100,L=+m[2]/100;
+    if(m[3]!==undefined)a=Math.round(+m[3]*255);
+    if(S<=0){r=g=b=Math.round(L*255);}
+    else{
+      const q=L<.5?L*(1+S):L+S-L*S,p=2*L-q;
+      const f=(t)=>{if(t<0)t+=1;if(t>1)t-=1;
+        if(t<1/6)return p+(q-p)*6*t;
+        if(t<1/2)return q;
+        if(t<2/3)return p+(q-p)*(2/3-t)*6;
+        return p;};
+      r=Math.round(f(H+1/3)*255);g=Math.round(f(H)*255);b=Math.round(f(H-1/3)*255);
+    }
+  }
+  v=((a<<24)|(b<<16)|(g<<8)|r)>>>0;
+  CC.set(c,v);
+  return v;
+}
+
+// ── basic primitives ──
+function pr(x,y,w,h,c){
+  const v=col(c),W=FB.w,H=FB.h,B=FB.buf;
+  let x0=(x+OFFX)|0,y0=(y+OFFY)|0,x1=x0+(w|0),y1=y0+(h|0);
+  if(x0<0)x0=0;if(y0<0)y0=0;if(x1>W)x1=W;if(y1>H)y1=H;
+  if(x0>=x1||y0>=y1)return;
+  if(x1-x0===1){for(let yy=y0;yy<y1;yy++)B[yy*W+x0]=v;return;}
+  for(let yy=y0;yy<y1;yy++){
+    const o=yy*W;
+    B.fill(v,o+x0,o+x1);
+  }
+}
+function ps(x,y,c){
+  const W=FB.w,xx=(x+OFFX)|0,yy=(y+OFFY)|0;
+  if(xx<0||yy<0||xx>=W||yy>=FB.h)return;
+  FB.buf[yy*W+xx]=col(c);
+}
+
+// ── ordered Bayer 4x4 dithering ──
+const B4=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+function pdithL(x,y,w,h,c,lvl){
+  if(lvl<=0)return;
+  if(lvl>=16)return pr(x,y,w,h,c);
+  const v=col(c),W=FB.w,H=FB.h,B=FB.buf;
+  let x0=(x+OFFX)|0,y0=(y+OFFY)|0,x1=x0+(w|0),y1=y0+(h|0);
+  if(x0<0)x0=0;if(y0<0)y0=0;if(x1>W)x1=W;if(y1>H)y1=H;
+  for(let yy=y0;yy<y1;yy++){
+    const o=yy*W,ry=(yy&3)<<2;
+    for(let xx=x0;xx<x1;xx++)
+      if(B4[ry|(xx&3)]<lvl)B[o+xx]=v;
+  }
+}
+function pdith(x,y,w,h,c,step,ph){
+  pdithL(x,y,w,h,c,Math.round(16/Math.max(1,step)));
+}
+function pwash(c,a,x,y,w,hh){
+  if(!(a>0.004))return;
+  const A=Math.min(.86,a);
+  const v=col(c),sr=v&255,sg=(v>>8)&255,sb=(v>>16)&255;
+  const W=FB.w,H=FB.h,B=FB.buf;
+  let x0=((x||0)+OFFX)|0,y0=((y||0)+OFFY)|0;
+  let x1=x0+((w||RW)|0),y1=y0+((hh||RH)|0);
+  if(x0<0)x0=0;if(y0<0)y0=0;if(x1>W)x1=W;if(y1>H)y1=H;
+  const ia=Math.round(A*256),ib=256-ia;
+  for(let yy=y0;yy<y1;yy++){
+    const o=yy*W;
+    for(let xx=x0;xx<x1;xx++){
+      const i=o+xx,d=B[i];
+      const dr=d&255,dg=(d>>8)&255,db=(d>>16)&255;
+      B[i]=(255<<24|(((sb*ia+db*ib)>>8)<<16)|(((sg*ia+dg*ib)>>8)<<8)
+        |((sr*ia+dr*ib)>>8))>>>0;
+    }
+  }
+}
+
+// ── shapes ──
+function pdisc(cx,cy,rx,ry,c){
+  if(!(rx>0)||!(ry>0))return;
+  const v=col(c),CX=Math.round(cx),CY=Math.round(cy);
+  const yr=Math.round(ry);
+  const W=FB.w,H=FB.h,B=FB.buf;
+  for(let dy=-yr;dy<=yr;dy++){
+    const t=dy/ry;
+    if(t*t>=1)continue;
+    const w=Math.round(rx*Math.sqrt(1-t*t));
+    if(w<=0)continue;
+    const yy=CY+dy+OFFY;
+    if(yy<0||yy>=H)continue;
+    let x0=CX-w+OFFX,x1=x0+w*2+1;
+    if(x0<0)x0=0;if(x1>W)x1=W;
+    if(x0<x1){const o=yy*W;B.fill(v,o+x0,o+x1);}
+  }
+}
+function pring(cx,cy,rx,ry,c){
+  if(!(rx>0)||!(ry>0))return;
+  const v=col(c);
+  const CX=Math.round(cx)+OFFX,CY=Math.round(cy)+OFFY;
+  const yr=Math.round(ry),xr=Math.round(rx);
+  const W=FB.w,H=FB.h,B=FB.buf;
+  const put=(x,y)=>{if(x>=0&&y>=0&&x<W&&y<H)B[y*W+x]=v;};
+  for(let dy=-yr;dy<=yr;dy++){
+    const t=dy/ry;if(t*t>1)continue;
+    const w=Math.round(rx*Math.sqrt(1-t*t));
+    put(CX-w,CY+dy);put(CX+w,CY+dy);
+  }
+  for(let dx=-xr;dx<=xr;dx++){
+    const t=dx/rx;if(t*t>1)continue;
+    const w=Math.round(ry*Math.sqrt(1-t*t));
+    put(CX+dx,CY-w);put(CX+dx,CY+w);
+  }
+}
+function pline(x0,y0,x1,y1,c){
+  const v=col(c);
+  let X=Math.round(x0)+OFFX,Y=Math.round(y0)+OFFY;
+  const X1=Math.round(x1)+OFFX,Y1=Math.round(y1)+OFFY;
+  const dx=Math.abs(X1-X),dy=Math.abs(Y1-Y);
+  const sx=X<X1?1:-1,sy=Y<Y1?1:-1;
+  const W=FB.w,H=FB.h,B=FB.buf;
+  let e=dx-dy,g=0;
+  for(;;){
+    if(X>=0&&Y>=0&&X<W&&Y<H)B[Y*W+X]=v;
+    if((X===X1&&Y===Y1)||++g>900)break;
+    const e2=e*2;
+    if(e2>-dy){e-=dy;X+=sx;}
+    if(e2<dx){e+=dx;Y+=sy;}
+  }
+}
+function polySpans(pts,cb){
+  let ymin=1e9,ymax=-1e9;
+  for(const p of pts){if(p[1]<ymin)ymin=p[1];if(p[1]>ymax)ymax=p[1];}
+  const y0=Math.max(0,Math.round(ymin)),y1=Math.min(FB.h-1,Math.round(ymax));
+  const xs=[];
+  for(let y=y0;y<=y1;y++){
+    xs.length=0;
+    for(let i=0,n=pts.length;i<n;i++){
+      const a=pts[i],b=pts[(i+1)%n];
+      const ay=a[1],by=b[1];
+      if((ay<=y&&by>y)||(by<=y&&ay>y))
+        xs.push(a[0]+(y-ay)/(by-ay)*(b[0]-a[0]));
+    }
+    if(xs.length<2)continue;
+    xs.sort((p,q)=>p-q);
+    for(let k=0;k+1<xs.length;k+=2)
+      cb(Math.round(xs[k]),Math.round(xs[k+1]),y);
+  }
+}
+function ppoly(pts,c){
+  const v=col(c);
+  polySpans(pts,(a,b,y)=>{if(b>=a)pr(a,y,b-a+1,1,v);});
+}
+function pdithPolyLocal(pts,c,step,ph){
+  const lvl=Math.round(16/Math.max(1,step));
+  polySpans(pts,(a,b,y)=>{if(b>=a)pdithL(a,y,b-a+1,1,c,lvl);});
+}
+
+/* ── tile blitting ────────────────────────────────────────────
+   A naive pass over every pixel cost more than the native
+   drawImage we replaced. So there are two paths:
+   - an opaque full-screen tile - one set() (memcpy);
+   - a transparent one - an index of non-empty runs per row, computed
+     once when the tile is created. In the foreground (branches, grass)
+     most rows are either empty or narrow.
+   ──────────────────────────────────────────────────────────── */
+function fbIndex(f){
+  const rows=new Int32Array(f.h*2);
+  let opaque=true;
+  for(let y=0;y<f.h;y++){
+    const o=y*f.w;
+    let a=-1,b=-1;
+    for(let x=0;x<f.w;x++){
+      if(f.buf[o+x]&0xff000000){if(a<0)a=x;b=x;}
+      else opaque=false;
+    }
+    rows[y*2]=a;rows[y*2+1]=b;
+  }
+  f.rows=rows;f.opaque=opaque;
+  return f;
+}
+function blit(src,dx,dy){
+  if(!src)return;
+  const SW=src.w,SH=src.h,SB=src.buf;
+  const W=FB.w,H=FB.h,B=FB.buf;
+  const ox=(dx+OFFX)|0,oy=(dy+OFFY)|0;
+  // full-screen opaque tile with no offset - just a copy
+  if(src.opaque&&ox===0&&oy===0&&SW===W&&SH===H){B.set(SB);return;}
+  const rows=src.rows;
+  let sy0=0,sy1=SH;
+  if(oy<0)sy0=-oy;
+  if(oy+SH>H)sy1=H-oy;
+  for(let y=sy0;y<sy1;y++){
+    let a=0,b=SW-1;
+    if(rows){a=rows[y*2];if(a<0)continue;b=rows[y*2+1];}
+    let x0=a,x1=b+1;
+    if(ox+x0<0)x0=-ox;
+    if(ox+x1>W)x1=W-ox;
+    if(x0>=x1)continue;
+    const so=y*SW,to=(oy+y)*W+ox;
+    if(src.opaque){
+      B.set(SB.subarray(so+x0,so+x1),to+x0);
+      continue;
+    }
+    for(let x=x0;x<x1;x++){
+      const v=SB[so+x];
+      if(v&0xff000000)B[to+x]=v;
+    }
+  }
+}
+// draws into target f, returns the previous one
+function fbPush(f){const p=FB;FB=f;return p;}
+function fbPop(p){FB=p;}
+
+function pnum(s,x,y,c){
+  const v=col(c);
+  const G={'0':[7,5,5,5,7],'1':[2,6,2,2,7],'2':[7,1,7,4,7],'3':[7,1,7,1,7],
+    '4':[5,5,7,1,1],'5':[7,4,7,1,7],'6':[7,4,7,5,7],'7':[7,1,1,1,1],
+    '8':[7,5,7,5,7],'9':[7,5,7,1,7],'.':[0,0,0,0,2],'-':[0,0,7,0,0],
+    '+':[0,2,7,2,0],'%':[5,1,2,4,5],'$':[7,4,7,1,7],'k':[4,5,6,5,5],
+    'x':[0,5,2,5,0],' ':[0,0,0,0,0]};
+  let px=x|0;
+  for(const ch of String(s)){
+    const g=G[ch]||G[' '];
+    for(let r=0;r<5;r++){
+      const m=g[r];
+      for(let b=0;b<3;b++)if(m&(4>>b))ps(px+b,(y|0)+r,v);
+    }
+    px+=4;
+  }
+}
+function numW(s){return String(s).length*4-1;}
+
+const JT=[0,1,-1,1,0,-1,1,-1];
+function jit(amp,ph){
+  if(amp<.5)return 0;
+  return JT[((fr>>1)+ph)&7]*Math.min(2,Math.round(amp));
+}
+function rnd(s){let h=(s*2654435761)>>>0;return()=>{h^=h<<13;h>>>=0;h^=h>>17;h^=h<<5;h>>>=0;return h/4294967296;};}
+function hsl(h,s,l){return'hsl('+Math.round(h)+','+Math.round(cl(s,0,100))+'%,'+Math.round(cl(l,0,100))+'%)';}
+function lerp(a,b,t){return a+(b-a)*t;}
+function cl(v,a,b){return v<a?a:(v>b?b:v);}
+function qz(v,s){return Math.round(v/s)*s;}
+
+let T=0,fr=0;
+// sim state aliases for rendering (synced from S every frame)
+let gen=1,born=0,mc=184,ath=184,silk=.04;
+let dead=false,deadT=0,hatching=0,cocoonT=0;
+let inFlow=0,outFlow=0,kills=0,bites=0;
+let flashT=0,flashCol='#7ce060',shake=0,webBuzz=0;
+let forced=null,logN=0;
+let spiders=[],shots=[];
+const fx=[],legs=[],Q=[];
+const FX_CAP=240,LEGS_CAP=160;
+let FLY=null,DNA=null;
+let AC=null,MG=null,sndOn=false;
+function initAudio(){
+  if(AC)return;
+  try{AC=new (window.AudioContext||window.webkitAudioContext)();
+    MG=AC.createGain();MG.gain.value=.24;MG.connect(AC.destination);}catch(e){AC=null;}
+}
+function toggleSound(){
+  initAudio();const b=document.getElementById('sndBtn');
+  if(!AC){b.className='ico';b.title='audio unavailable';return;}
+  sndOn=!sndOn;if(sndOn&&AC.state==='suspended')AC.resume();
+  b.className=sndOn?'ico on':'ico';
+  b.title=sndOn?'sound on':'sound off';
+  if(sndOn){musInit();tone(440,.05,'square',.3,660);}
+}
+function tone(f,dur,type,vol,f2,delay){
+  if(!sndOn||!AC)return;
+  const t0=AC.currentTime+(delay||0);
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type=type||'square';o.frequency.setValueAtTime(f,t0);
+  if(f2)o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t0+dur);
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(vol||.3,t0+.008);
+  g.gain.exponentialRampToValueAtTime(.0005,t0+dur);
+  o.connect(g);g.connect(MG);o.start(t0);o.stop(t0+dur+.02);
+}
+function noise(dur,vol,lp,delay){
+  if(!sndOn||!AC)return;
+  const t0=AC.currentTime+(delay||0);
+  const n=Math.floor(AC.sampleRate*dur);
+  const buf=AC.createBuffer(1,n,AC.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+  const s=AC.createBufferSource();s.buffer=buf;
+  const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=lp||1400;
+  const g=AC.createGain();g.gain.value=vol||.3;
+  s.connect(f);f.connect(g);g.connect(MG);s.start(t0);
+}
+
+function midi(m){return 440*Math.pow(2,(m-69)/12);}
+const MSC={
+  calm:     {root:57,n:[0,2,4,7,9],     beat:1.50,dens:.55,dur:2.4,vol:.075,wave:'triangle',oct:[0,12],  arp:0,pad:.050,lp:820},
+  hopeful:  {root:60,n:[0,2,4,7,9,11],  beat:1.10,dens:.70,dur:1.9,vol:.080,wave:'triangle',oct:[0,12],  arp:1,pad:.055,lp:980},
+  euphoric: {root:64,n:[0,2,4,7,9,12],  beat:0.55,dens:.85,dur:1.1,vol:.085,wave:'square',  oct:[0,12,24],arp:1,pad:.060,lp:1300},
+  enraged:  {root:50,n:[0,3,5,6,10],    beat:0.50,dens:.80,dur:0.8,vol:.080,wave:'sawtooth',oct:[0,12],  arp:1,pad:.072,lp:700},
+  frantic:  {root:55,n:[0,3,5,7,10],    beat:0.38,dens:.82,dur:0.5,vol:.072,wave:'square',  oct:[0,12],  arp:0,pad:.062,lp:880},
+  terrified:{root:45,n:[0,1,6,7,11],    beat:1.00,dens:.45,dur:2.8,vol:.070,wave:'triangle',oct:[0,12],  arp:0,pad:.088,lp:520},
+  exhausted:{root:48,n:[0,3,5,7,8],     beat:2.20,dens:.45,dur:3.4,vol:.065,wave:'sine',    oct:[0],     arp:0,pad:.050,lp:460},
+  resigned: {root:43,n:[0,3,7],         beat:3.00,dens:.35,dur:4.2,vol:.060,wave:'sine',    oct:[0],     arp:0,pad:.045,lp:380},
+  dead:     {root:38,n:[0,3],           beat:4.00,dens:.25,dur:5.2,vol:.050,wave:'sine',    oct:[0],     arp:0,pad:.040,lp:300}
+};
+let MUS=null,musVol=.55;
+function musInit(){
+  if(MUS||!AC)return;
+  const g=AC.createGain();g.gain.value=musVol;g.connect(MG);
+  const pg=AC.createGain();pg.gain.value=0;pg.connect(g);
+  const pf=AC.createBiquadFilter();pf.type='lowpass';pf.frequency.value=600;pf.connect(pg);
+  const o1=AC.createOscillator();o1.type='triangle';o1.frequency.value=110;o1.connect(pf);
+  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=165;o2.connect(pf);
+  const o3=AC.createOscillator();o3.type='sine';o3.frequency.value=110.4;o3.connect(pf);
+  o1.start();o2.start();o3.start();
+  const bg=AC.createGain();bg.gain.value=0;bg.connect(g);
+  const bf=AC.createBiquadFilter();bf.type='bandpass';bf.frequency.value=320;bf.Q.value=3.2;bf.connect(bg);
+  const bo=AC.createOscillator();bo.type='sawtooth';bo.frequency.value=195;bo.connect(bf);bo.start();
+  const nf=AC.createBiquadFilter();nf.type='lowpass';nf.frequency.value=2200;nf.connect(g);
+  const mkNoise=(secs)=>{
+    const n=Math.floor(AC.sampleRate*secs);
+    const b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);
+    let lv=0;
+    for(let i=0;i<n;i++){lv=lv*.88+(Math.random()*2-1)*.12;d[i]=lv*2.4;}
+    return b;};
+  const rs=AC.createBufferSource();rs.buffer=mkNoise(3);rs.loop=true;
+  const rf=AC.createBiquadFilter();rf.type='highpass';rf.frequency.value=1200;
+  const rg=AC.createGain();rg.gain.value=0;
+  rs.connect(rf);rf.connect(rg);rg.connect(g);rs.start();
+  const ws=AC.createBufferSource();ws.buffer=mkNoise(4);ws.loop=true;
+  const wf=AC.createBiquadFilter();wf.type='bandpass';wf.frequency.value=320;wf.Q.value=1.1;
+  const wg=AC.createGain();wg.gain.value=0;
+  ws.connect(wf);wf.connect(wg);wg.connect(g);ws.start();
+  MUS={g,pg,pf,o1,o2,o3,bg,bf,bo,nf,rs,rf,rg,ws,wf,wg,next:0,step:0,creak:0};
+}
+function musNote(m,dur,wave,vol,when,pan){
+  if(!MUS)return;
+  const o=AC.createOscillator(),o2=AC.createOscillator();
+  const gn=AC.createGain(),f=AC.createBiquadFilter();
+  f.type='lowpass';f.frequency.setValueAtTime(2400,when);
+  f.frequency.exponentialRampToValueAtTime(700,when+dur*.7);
+  o.type=wave;o2.type='sine';
+  const fq=midi(m);
+  o.frequency.value=fq;o2.frequency.value=fq*2.004;
+  gn.gain.setValueAtTime(0,when);
+  gn.gain.linearRampToValueAtTime(vol,when+.035);
+  gn.gain.exponentialRampToValueAtTime(.0004,when+dur);
+  o.connect(f);o2.connect(f);f.connect(gn);gn.connect(MUS.g);
+  o.start(when);o2.start(when);o.stop(when+dur+.06);o2.stop(when+dur+.06);
+  if(vol>.05){
+    const e=AC.createOscillator(),eg=AC.createGain();
+    e.type='sine';e.frequency.value=fq;
+    eg.gain.setValueAtTime(0,when+.30);
+    eg.gain.linearRampToValueAtTime(vol*.28,when+.34);
+    eg.gain.exponentialRampToValueAtTime(.0004,when+.30+dur*.8);
+    e.connect(eg);eg.connect(MUS.g);
+    e.start(when+.30);e.stop(when+.30+dur+.06);
+  }
+}
+function musStep(S,when){
+  if(Math.random()>S.dens)return;
+  const cnt=(S.arp&&Math.random()<.42)?(2+((Math.random()*2)|0)):1;
+  for(let i=0;i<cnt;i++){
+    const deg=S.n[(Math.random()*S.n.length)|0];
+    const oc=S.oct[(Math.random()*S.oct.length)|0];
+    musNote(S.root+deg+oc,S.dur*(.8+Math.random()*.4),S.wave,
+      S.vol*(i?.72:1),when+i*S.beat*.24);
+  }
+}
+function musCreak(when){
+  if(!MUS)return;
+  const n=Math.floor(AC.sampleRate*.9);
+  const buf=AC.createBuffer(1,n,AC.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<n;i++){
+    const t=i/n;
+    d[i]=(Math.random()*2-1)*Math.sin(t*Math.PI)*.5*(.4+Math.sin(t*38)*.6);}
+  const s=AC.createBufferSource();s.buffer=buf;
+  const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=180;f.Q.value=5;
+  const gn=AC.createGain();gn.gain.value=.10;
+  s.connect(f);f.connect(gn);gn.connect(MUS.g);s.start(when);
+}
+function thunder(w){
+  if(!sndOn||!AC)return;
+  const t0=AC.currentTime,dur=1.4+w*1.4;
+  const n=Math.floor(AC.sampleRate*dur);
+  const b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);
+  let lv=0;
+  for(let i=0;i<n;i++){
+    const t=i/n;
+    lv=lv*.97+(Math.random()*2-1)*.03;
+    const env=Math.pow(1-t,1.8)*(1+Math.sin(t*26)*.35);
+    d[i]=lv*env*6;}
+  const s=AC.createBufferSource();s.buffer=b;
+  const f=AC.createBiquadFilter();f.type='lowpass';
+  f.frequency.setValueAtTime(400,t0);
+  f.frequency.exponentialRampToValueAtTime(90,t0+dur);
+  const gn=AC.createGain();gn.gain.value=.34*(.5+w*.5);
+  s.connect(f);f.connect(gn);gn.connect(MG);s.start(t0);
+  tone(58,.5,'sine',.18*(.4+w*.6),34);
+}
+function musUpdate(dt){
+  if(!AC)return;
+  if(sndOn&&!MUS)musInit();
+  if(!MUS)return;
+  const st=moodOf()[2],S=MSC[st]||MSC.calm;
+  const now=AC.currentTime;
+  MUS.g.gain.setTargetAtTime(sndOn?musVol:0,now,.25);
+  const rf=midi(S.root-12);
+  MUS.o1.frequency.setTargetAtTime(rf,now,1.1);
+  MUS.o3.frequency.setTargetAtTime(rf*1.004,now,1.1);
+  MUS.o2.frequency.setTargetAtTime(rf*(st==='terrified'||st==='enraged'?1.414:1.5),now,1.3);
+  MUS.pf.frequency.setTargetAtTime(S.lp*(1-silk*.45),now,.7);
+  MUS.pg.gain.setTargetAtTime(sndOn?S.pad*(1+silk*.5):0,now,.9);
+  const fl=FLY?FLY.f.flutter:0;
+  MUS.bg.gain.setTargetAtTime(sndOn?fl*.030:0,now,.07);
+  MUS.bo.frequency.setTargetAtTime(168+fl*95,now,.10);
+  MUS.bf.frequency.setTargetAtTime(275+fl*270,now,.12);
+  if(!sndOn){MUS.next=0;return;}
+  if(MUS.next<now)MUS.next=now+.08;
+  let guard=0;
+  while(MUS.next<now+.5&&guard++<8){
+    musStep(S,MUS.next);
+    MUS.next+=S.beat*(.82+Math.random()*.36);
+    MUS.step++;
+  }
+  MUS.creak-=dt;
+  if(MUS.creak<0){MUS.creak=700+Math.random()*1400;if(wx<.5)musCreak(now+.1);}
+}
+function pluck(pitch,vol){
+  if(!sndOn||!AC)return;
+  const t0=AC.currentTime;
+  const o=AC.createOscillator(),g2=AC.createGain(),f=AC.createBiquadFilter();
+  f.type='bandpass';f.frequency.value=pitch*2;f.Q.value=6;
+  o.type='triangle';o.frequency.setValueAtTime(pitch,t0);
+  o.frequency.exponentialRampToValueAtTime(pitch*.6,t0+.09);
+  g2.gain.setValueAtTime(vol,t0);
+  g2.gain.exponentialRampToValueAtTime(.0004,t0+.11);
+  o.connect(f);f.connect(g2);g2.connect(MG);o.start(t0);o.stop(t0+.13);
+}
+function chime(){
+  if(!sndOn||!AC)return;
+  [0,4,7,12].forEach((d,i)=>tone(midi(72+d),.30,'sine',.13,null,i*.07));
+}
+
+const SFX={
+  buy:()=>{tone(784,.04,'square',.18,1175);},
+  whaleBuy:()=>{tone(523,.06,'square',.20,784);tone(784,.06,'square',.18,null,.06);
+    tone(1175,.10,'square',.18,null,.12);},
+  whaleSell:()=>{tone(175,.16,'sawtooth',.24,88);noise(.14,.16,500,.02);},
+  shot:()=>{tone(1175,.05,'square',.16,660);noise(.04,.08,3000);},
+  kill:()=>{noise(.16,.26,900);tone(196,.14,'sawtooth',.18,70);
+    tone(523,.05,'square',.14,880,.02);},
+  sell:()=>{tone(233,.10,'sawtooth',.20,147);},
+  spawn:()=>{tone(110,.14,'triangle',.16,82);noise(.10,.08,400,.04);},
+  bite:()=>{noise(.20,.34,700);tone(87,.26,'sawtooth',.26,44);
+    tone(1319,.06,'square',.14,880,.02);},
+  silk:()=>{noise(.18,.10,1800);},
+  buzz:(v)=>{tone(220+v*40,.05,'sawtooth',.06*v);},
+  hatch:()=>{tone(392,.07,'square',.18);tone(523,.07,'square',.18,null,.07);
+    tone(659,.07,'square',.18,null,.14);tone(880,.14,'square',.20,null,.21);},
+  die:()=>{noise(.5,.18,600);tone(294,.4,'triangle',.22,73);
+    tone(147,.6,'square',.14,49,.1);}
+};
+
+const FNAMES=['Musca Liquidata','Vesperia Rugpulla','Drosophila Diamondis',
+'Aeris Hodlensis','Silkbound Vanessa','Mnemosyne Mintwing','Fortuna Slippagia',
+'Vitalis Candlewing','Astra Bagholderis','Nyx Nonceford','Iris Airdropia',
+'Sable Stakewing','Lucia Longtail','Verity Voidwing','Dolores Dumpetta',
+'Cassia Coldwallet','Elara Exitliquida','Thalia Thinbook','Ophelia Orderflow',
+'Juno Janitrix','Perpetua Parabolica','Marina Marketmaker','Sylvia Slipstream',
+'Celia Ceilingbound','Delia Dustcollector','Rhea Retracement','Vera Volumetrix',
+'Nova Nakedshort','Aria Arbitrage','Lyra Liquidation'];
+const FTITLES=['Her Web-Bound Grace','The Last Wing of the Attic',
+'Silk Countess','Her Trembling Highness','Keeper of the Final Strand',
+'Dame of the Eleventh Hour','The Unsold','Her Fragile Eminence',
+'Warden of the Thorax','Lady of Diminishing Returns','The Twice-Bitten',
+'Duchess of the Draft','Her Suspended Majesty','Mistress of the Snapped Anchor',
+'The One Still Buzzing'];
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+const MORPHS=['emerald','sapphire','copper','obsidian','amber','viridian','pearl','ashen'];
+const MHUE={emerald:158,sapphire:212,copper:26,obsidian:268,amber:44,viridian:172,pearl:200,ashen:284};
+const EYEC=['crimson','garnet','amber','rose','void'];
+const EHUE={crimson:352,garnet:0,amber:34,rose:336,void:280};
+
+function mkDNA(seed){
+  const r=rnd(seed>>>0);
+  const mo=MORPHS[Math.floor(r()*MORPHS.length)];
+  const ec=EYEC[Math.floor(r()*EYEC.length)];
+  const nm=FNAMES[Math.floor(r()*FNAMES.length)];
+  return{seed,txh:'0x'+Math.floor(r()*0xffffffff).toString(16).padStart(8,'0')
+    +Math.floor(r()*0xffffffff).toString(16).padStart(8,'0'),
+    title:FTITLES[Math.floor(r()*FTITLES.length)],
+    base:nm,num:ROMAN[Math.floor(r()*ROMAN.length)],
+    name:nm+' '+ROMAN[Math.floor(r()*ROMAN.length)],
+    morph:mo,hue:qz(MHUE[mo]+(r()-.5)*16,8),
+    sat:cl(qz(46+r()*30,8),18,84),lig:cl(qz(48+r()*18,6),28,74),
+    eyeName:ec,eyeHue:qz(EHUE[ec]+(r()-.5)*10,6),
+    eyeSat:cl(qz(62+r()*26,8),24,92),eyeBig:.9+r()*.3,
+    wing:.88+r()*.3,wingTint:qz(180+r()*60,10),
+    abLen:.9+r()*.3,stripes:2+Math.floor(r()*3),
+    anten:.85+r()*.35,bristle:r()<.5,
+    rare:r()<.09?'gilded':(r()<.18?'translucent':null)};
+}
+function fullName(){return DNA.title+', '+DNA.name;}
+function shadeSet(h,s,l){
+  return{li:hsl(h,s-8,l+18),ba:hsl(h,s,l),sh:hsl(h,s+6,l-14),dk:hsl(h,s+10,l-26)};
+}
+
+const FKEYS=['glint','anten','prob','flutter','struggle','curl','tilt','bright'];
+const FACE={
+  calm:{glint:1,anten:.30,prob:0,flutter:.14,struggle:.05,curl:0,tilt:0,bright:.5},
+  hopeful:{glint:1.20,anten:.75,prob:.30,flutter:.50,struggle:.22,curl:-.12,tilt:.06,bright:.8},
+  euphoric:{glint:1.50,anten:1,prob:.70,flutter:1,struggle:.38,curl:-.22,tilt:.12,bright:1},
+  enraged:{glint:.55,anten:.90,prob:.60,flutter:.92,struggle:.72,curl:-.16,tilt:0,bright:.7},
+  frantic:{glint:.70,anten:-.18,prob:.12,flutter:1,struggle:1,curl:.22,tilt:-.06,bright:.5},
+  terrified:{glint:.32,anten:-.62,prob:0,flutter:.82,struggle:.88,curl:.62,tilt:-.10,bright:.2},
+  exhausted:{glint:.58,anten:-.50,prob:.16,flutter:.10,struggle:.14,curl:.36,tilt:-.12,bright:.25},
+  resigned:{glint:.38,anten:-.92,prob:0,flutter:.02,struggle:.03,curl:.50,tilt:-.18,bright:.1},
+  dead:{glint:0,anten:-1,prob:.45,flutter:0,struggle:0,curl:.80,tilt:-.30,bright:0}
+};
+const FRATE={glint:.26,anten:.16,prob:.14,flutter:.22,struggle:.20,curl:.09,tilt:.07,bright:.12};
+
+const WEB={cx:160,cy:96,spokes:12,rings:6};
+const SPOKE=[];
+function initWeb(){
+  const r=rnd(90210);
+  SPOKE.length=0;
+  for(let i=0;i<WEB.spokes;i++){
+    const a=i/WEB.spokes*6.28319+(r()-.5)*.16;
+    const len=96+r()*46;
+    SPOKE.push({a,len,ax:WEB.cx+Math.cos(a)*len,ay:WEB.cy+Math.sin(a)*len,
+      sag:.06+r()*.10,vib:0});
+  }
+}
+function spokeStatic(i,t){
+  const s=SPOKE[i],r=s.len*t;
+  return[WEB.cx+Math.cos(s.a)*r,
+    WEB.cy+Math.sin(s.a)*r+Math.sin(t*Math.PI)*s.len*s.sag*.30];
+}
+function spokePt(i,t){
+  const s=SPOKE[i];
+  const r=s.len*t;
+  const vb=s.vib*Math.sin(T*.42+i)*3*(1-Math.abs(t-.5)*1.4);
+  return[WEB.cx+Math.cos(s.a)*r+Math.cos(s.a+1.57)*vb,
+    WEB.cy+Math.sin(s.a)*r+Math.sin(s.a+1.57)*vb+Math.sin(t*Math.PI)*s.len*s.sag*.30];
+}
+function mkFLY(){
+  const f={};for(const k of FKEYS)f[k]=FACE.calm[k];
+  return{x:WEB.cx,y:WEB.cy,drift:0,ph:0,f,trans:0,lastSt:'',
+    blink:0,blinkT:140,dbl:0,sac:0,sacT:0,sacTgt:0,
+    twitch:0,twitchT:180,antL:0,antR:0,tremble:0,wingPh:0};
+}
+function silkStage(s){
+  if(s<.20)return[0,'free',C.g1];
+  if(s<.40)return[1,'legs bound',C.y1];
+  if(s<.60)return[2,'wings pinned',C.y2];
+  if(s<.80)return[3,'thorax wrapped',C.sr1];
+  if(s<1)return[4,'head going under',C.sr0];
+  return[5,'cocooned',C.sk1];
+}
+function clock(){
+  const d=new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+}
+/* Necropolis in the panel. Data comes from the death registry, so the list is the
+   same for all viewers - it is derived from the log, not from
+   local session history. */
+let NECRO=[];
+function renderNecro(){
+  const el=document.getElementById('necro');
+  const cnt=document.getElementById('necroCount');
+  const pan=document.getElementById('necroPanel');
+  if(!el||!pan)return;
+  if(!NECRO.length){pan.classList.remove('on');return;}
+  pan.classList.add('on');
+  if(cnt)cnt.textContent=NECRO.length;
+  el.innerHTML='';
+  for(const d of NECRO.slice(0,40)){
+    const dd=d.pxAth>0?Math.max(0,1-d.px/d.pxAth):0;
+    const div=document.createElement('div');
+    div.className='tomb';
+    div.innerHTML='<div class="g">GEN #'+d.gen+' &middot; seed '+esc(d.seed)+'</div>'
+      +'<div class="n">'+esc(d.title||'')+' '+esc(d.name||'')+'</div>'
+      +'<div class="m">lived <b>'+fmtAge(d.ageSteps)+'</b>'
+      +' &middot; intercepted <b>'+d.kills+'</b> of <b>'+(d.kills+d.bites)+'</b>'
+      +'<br>drawdown at death <b>'+(dd*100).toFixed(1)+'%</b>'
+      +' &middot; last tx <b>'+esc(String(d.sig||'').slice(0,8))+'</b></div>';
+    el.appendChild(div);
+  }
+}
+function esc(s){return String(s==null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+async function refreshNecro(meta){
+  if(FEEDCFG.mode==='demo')return;
+  try{NECRO=await FEED.fetchDeaths(meta||null);renderNecro();}catch(e){}
+}
+function log(head,desc,col){
+  const el=document.getElementById('log');
+  const d=document.createElement('div');d.className='ev';
+  d.innerHTML='<div class="t">'+clock()+'</div><div class="h" style="color:'+col+'">'+head+'</div><div class="d">'+desc+'</div>';
+  el.insertBefore(d,el.firstChild);
+  while(el.children.length>50)el.removeChild(el.lastChild);
+  logN++;document.getElementById('logCount').textContent=logN;
+}
+
+
+let scanOn=true;
+
+function toggleFS(){
+  const s=document.getElementById('stage');
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    (s.requestFullscreen||s.webkitRequestFullscreen).call(s);
+  }else{(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+}
+
+
+
+
+
+
+// The seed is passed explicitly: during catch-up the queue may hold
+// several hatches, and without this every log line would describe the last
+// fly, not the one it is about.
+function applyGen(seed){
+  DNA=mkDNA(seed===undefined?S.seed:seed);FLY=mkFLY();
+  hatching=1;
+  document.getElementById('ftitle').textContent=DNA.title;
+  document.getElementById('fname').textContent=DNA.name;
+}
+
+
+
+function addFx(kind,n,x,y){
+  if(fx.length>FX_CAP-n)fx.splice(0,fx.length-(FX_CAP-n));
+  for(let i=0;i<n;i++)fx.push({kind,
+    x:(x===undefined?FLY.x:x)+(Math.random()-.5)*14,
+    y:(y===undefined?FLY.y-14:y)+(Math.random()-.5)*8,
+    vx:(Math.random()-.5)*.5,vy:-.16-Math.random()*.3,
+    life:0,max:30+Math.random()*20});
+}
+/* ============================================================
+   DETERMINISTIC ENGINE
+   State = a pure function of (GENESIS_SEED, the ordered list of
+   trades, step number). No Math.random and no wall
+   clock in state-changing paths. Rendering and cosmetics are
+   separate and may be non-deterministic.
+   ============================================================ */
+const SIMC={
+  GENESIS_TS:   Date.UTC(2026,8,18,0,0,0),
+  GENESIS_SEED: 0x5A4EF1,   // demo; in csv it is derived from the pool address
+  STEP_MS:      50,
+  LAG_MS:       4000,   // demo; raised in bootLive for a live feed
+  LATE_GRACE:   1200,   // steps: how late an event we still accept
+  STALL_GRACE:  1200,   // steps after the last event, we go no further
+  EPOCH_MS:      6*3600*1000,
+  // tuned by running real Solana trades (PAID, PEPENOM, RETURN)
+  SIZE_REF:     0.30,    // SOL, reference point of the logarithmic mapping
+  SIZE_K:       0.72,
+  DUST_SOL:     0.02,    // below this - spawns no entity, only moves the price
+  SPIDER_CAP:   12,      // beyond this merge into the largest instead of spawning
+  SPIDER_SPD:   0.50,    // crawl speed multiplier
+  BITE_DEBT:    0.035,   // silk per missed bite
+  DEBT_HEAL:    0.99955, // debt healing per step
+  SHOT_CAP:     40,      // max shots in reserve
+  SHOT_MULT:    2.5,     // shots per unit of buy size
+  /* Spawning by VOLUME, not by trade.
+     12 spiders are fundamentally incompatible with 167 trades/s: the caps
+     saturated, every sell merged into the largest spider, which
+     accumulated infinite hp, became unkillable and bit
+     nonstop - silk 1.03 and deaths at ZERO drawdown.
+     So sells and buys accumulate, and an entity is born
+     at every volume threshold. The threshold is adaptive: it equals the volume over
+     SPAWN_STEPS steps of flow, so the entity spawn rate is almost
+     constant at any pace, and the size reflects the volume the
+     entity represents.
+     On a quiet token the threshold drops to SIZE_REF and one trade = one
+     spider, as intended. */
+  SPAWN_STEPS:  24,      // flow steps per entity
+  SPAWN_MAX:    6,       // max entities from one event
+  FLOW_EMA:     0.02,    // flow smoothing (per step)
+  // ── fresh launch mode ──
+  // A memecoin in its first minutes does +1800% and -60% several times.
+  // A price peak during price discovery is not a drawdown, so:
+  ATH_BAR_MS:   60000,   // ATH is computed from closed one-minute bars
+  ATH_MAX_STEP: 4,       // ATH grows no more than this many times per bar
+  ATH_RUN_BOOST: 3,      // consecutive rising bars loosen this limit
+  DD_CAP:       0.88,    // the drawdown contribution to silk is capped
+  BIRTH_GRACE:  900000   // ms from genesis: the drawdown contribution ramps up
+};
+function solToSize(sol){
+  if(!(sol>0)||sol<SIMC.DUST_SOL)return 0;
+  return cl(Math.log2(1+sol/SIMC.SIZE_REF)*SIMC.SIZE_K+0.22,0.20,3.0);
+}
+/* The genesis seed is derived from the pool address, so the DNA of the first generation
+   can be verified by anyone from the token address. The constant in the config is
+   only a fallback for demo mode. */
+function seedFromString(s){
+  let h=2166136261>>>0;
+  for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),16777619)>>>0;}
+  h=(h^(h>>>16))>>>0;h=Math.imul(h,0x7FEB352D)>>>0;
+  return (h^(h>>>15))>>>0;
+}
+function srnd(a,b,c){
+  let h=(Math.imul(a|0,0x9E3779B1)^Math.imul(b|0,0x85EBCA77)^Math.imul(c|0,0xC2B2AE3D))>>>0;
+  h=(h^(h>>>16))>>>0;h=Math.imul(h,0x7FEB352D)>>>0;
+  h=(h^(h>>>15))>>>0;h=Math.imul(h,0x846CA68B)>>>0;
+  h=(h^(h>>>16))>>>0;
+  return h/4294967296;
+}
+function srndi(a,b,c,n){return (srnd(a,b,c)*n)|0;}
+
+let S=null;
+const OUTQ=[];
+let OUTDROP=0;
+function emit(t,d){
+  if(OUTQ.length<400)OUTQ.push(Object.assign({t},d));
+  else OUTDROP++;   // queue full: the event will not reach the log and sound
+}
+
+function simGenesis(){
+  return{
+    step:0,gen:1,genStep:0,seed:SIMC.GENESIS_SEED,
+    px:0,pxAth:0,bar:-1,barHi:0,barClose:0,athRun:0,
+    flow:0,vol:0,sellAcc:0,buyAcc:0,debt:0,silk:.04,
+    inFlow:0,outFlow:0,kills:0,bites:0,
+    dead:false,deadStep:0,
+    spiders:[],shots:[],nextId:1,ckStep:0,ckHash:'--------',ckLog:[],epoch:0,
+    evCount:0
+  };
+}
+function genSeedFor(gen,deathStep){
+  return (Math.imul(SIMC.GENESIS_SEED^gen,0x9E3779B1)^Math.imul(deathStep|0,0x85EBCA77))>>>0;
+}
+function simSpawnSpider(size,k){
+  const sd=S.seed,st=S.step;
+  S.spiders.push({
+    id:S.nextId++,
+    spoke:srndi(sd,st*7+k,11,WEB.spokes),
+    t:1,pt:1,size,hp:size,
+    sp:(.0008+.0011/Math.max(.6,size))*SIMC.SPIDER_SPD,
+    wob:srnd(sd,st*7+k,12)*6,
+    step:0,lastTk:-1,dying:0
+  });
+  emit('spawn',{spoke:S.spiders[S.spiders.length-1].spoke,size});
+}
+function simFireShot(size,k){
+  const sd=S.seed,st=S.step;
+  const side=srnd(sd,st*7+k,21)<.5?-1:1;
+  const y=40+srnd(sd,st*7+k,22)*150;
+  S.shots.push({id:S.nextId++,size,
+    x:WEB.cx+side*170,y,px:WEB.cx+side*170,py:y,
+    vx:0,vy:0,life:0});
+  emit('shot',{});
+}
+function simApplyEvent(ev){
+  if(S.dead)return;
+  // Input sanitization: a single Infinity in the price turned silk into NaN
+  // and the state became unusable forever. Found by fuzzing.
+  const evPx=Number(ev.px);
+  const evSol=Number(ev.sol!==undefined?ev.sol:ev.size);
+  const px=Number.isFinite(evPx)&&evPx>0?evPx:0;
+  const sol=Number.isFinite(evSol)&&evSol>0?evSol:0;
+  const side=ev.side>0?1:(ev.side<0?-1:0);
+  if(!side)return;
+  S.evCount++;
+  // price: absolute from the chain or a relative shift from the demo feed
+  if(px>0){S.px=px;}
+  else if(Number.isFinite(ev.dpx)&&ev.dpx){
+    S.px=Math.max(1e-12,(S.px||1)*(1+ev.dpx));}
+  if(!Number.isFinite(S.px)||S.px<=0)S.px=Math.max(1e-12,S.pxAth||1e-12);
+  // ATH is updated not from a single tick but from a closed one-minute bar,
+  // and grows no more than ATH_MAX_STEP times per bar. Without this one
+  // garbage tick (a bad quote, a sandwich) set ATH a million
+  // times higher and poisoned the drawdown forever.
+  const evTs=Number(ev.ts);
+  const tsMs=Number.isFinite(evTs)?evTs:(SIMC.GENESIS_TS+S.step*SIMC.STEP_MS);
+  const bar=Math.floor(tsMs/SIMC.ATH_BAR_MS);
+  if(S.bar!==bar){
+    // ATH is computed from the bar CLOSE, not its high. A spike
+    // from one trade or a sandwich within the minute does not change the
+    // close, so it does not become the high either. Plus a per-bar growth limit,
+    // which loosens if bars make new highs in a row -
+    // so a real pump catches up, but a single tick does not.
+    const close=S.barClose>0?S.barClose:S.px;
+    if(close>S.pxAth){
+      S.athRun=Math.min(6,(S.athRun||0)+1);
+      const mult=SIMC.ATH_MAX_STEP*Math.pow(SIMC.ATH_RUN_BOOST,S.athRun-1);
+      const cap=S.pxAth>0?S.pxAth*mult:close;
+      const nx=Math.min(close,cap);
+      if(nx>S.pxAth){S.pxAth=nx;emit('ath',{px:S.pxAth});}
+    }else S.athRun=0;
+    S.bar=bar;S.barHi=S.px;S.barClose=S.px;
+  }else{
+    if(S.px>S.barHi)S.barHi=S.px;
+    S.barClose=S.px;
+  }
+  if(!(S.pxAth>0))S.pxAth=S.px;
+  // Volume goes into an accumulator; an entity is born at the threshold.
+  S.vol+=sol;
+  const thr=Math.max(SIMC.SIZE_REF,S.flow*SIMC.SPAWN_STEPS);
+  /* One entity represents a volume of max(own trade, threshold).
+     So on a quiet token a big trade gives ONE big spider,
+     as intended, not a bunch of small ones; small trades accumulate
+     up to the threshold. On a hot token the threshold is large and the entity
+     represents an aggregate.
+     The number of spawns from one event is capped: without this an event of
+     1e9 SOL produced 3.3 billion iterations and the process hung. */
+  const evVol=Math.max(thr,sol);
+  if(ev.side>0){
+    S.inFlow=Math.min(3,S.inFlow+solToSize(sol)*.5);
+    S.buyAcc+=sol;
+    let g=0;
+    while(S.buyAcc>=thr&&g++<SIMC.SPAWN_MAX){
+      const take=Math.min(S.buyAcc,evVol);
+      const size=solToSize(take);
+      S.buyAcc-=take;
+      const n=cl(Math.round(size*SIMC.SHOT_MULT),1,8);
+      for(let i=0;i<n;i++)S.shots.push({pend:i*2,size:size/n});
+      while(S.shots.length>SIMC.SHOT_CAP)S.shots.shift();
+      emit('buy',{sol:take,size,n});
+    }
+    if(S.buyAcc>thr*(SIMC.SPAWN_MAX+1))S.buyAcc=thr;
+  }else{
+    S.outFlow=Math.min(3,S.outFlow+solToSize(sol)*.5);
+    S.sellAcc+=sol;
+    let g=0;
+    while(S.sellAcc>=thr&&g++<SIMC.SPAWN_MAX){
+      const take=Math.min(S.sellAcc,evVol);
+      const size=solToSize(take);
+      S.sellAcc-=take;
+      let alive=0;for(const s of S.spiders)if(!s.dying)alive++;
+      if(alive>=SIMC.SPIDER_CAP){
+        let big=null;
+        for(const s of S.spiders)if(!s.dying&&(!big||s.size>big.size))big=s;
+        if(big){
+          big.size=Math.min(3,big.size+size*.4);
+          big.hp=Math.min(big.size*2.2,big.hp+size*.4);
+        }
+        emit('merge',{size});
+      }else{
+        simSpawnSpider(size,0);
+        emit('sell',{sol:take,size,
+          spoke:S.spiders[S.spiders.length-1].spoke});
+      }
+    }
+    if(S.sellAcc>thr*(SIMC.SPAWN_MAX+1))S.sellAcc=thr;
+  }
+}
+function simStep(){
+  const D=1;
+  S.step++;
+  if((S.step%20)===0){
+    S.ckStep=S.step;S.ckHash=simHash();
+    S.ckLog.push(S.step+':'+S.ckHash);
+    if(S.ckLog.length>64)S.ckLog.shift();
+  }
+  // silk is not made up: it is the real drawdown from ATH plus the debt
+  // for bites that got through. The chain gives the drawdown, the game gives the debt.
+  // flow in SOL per step: the basis of the adaptive threshold
+  S.flow=S.flow+(S.vol-S.flow)*SIMC.FLOW_EMA;
+  S.vol=0;
+  S.debt*=SIMC.DEBT_HEAL;
+  let drop=(S.pxAth>0&&Number.isFinite(S.px))?cl(1-S.px/S.pxAth,0,1):0;
+  if(!Number.isFinite(drop))drop=0;
+  // the drawdown contribution is capped, so a price crash alone does not kill:
+  // the defense must fail too. And in the first minutes of life it ramps up,
+  // because price discovery is not a drawdown.
+  const ageMs=(S.step-S.genStep)*SIMC.STEP_MS;
+  const ramp=SIMC.BIRTH_GRACE>0?cl(ageMs/SIMC.BIRTH_GRACE,0,1):1;
+  drop=Math.min(drop,SIMC.DD_CAP)*(0.25+0.75*ramp);
+  const silkT=cl(drop+S.debt,0,1.05);
+  S.silk=S.silk+(silkT-S.silk)*.06;
+  if(!Number.isFinite(S.silk))S.silk=0;
+  S.inFlow*=.991;S.outFlow*=.991;
+
+  if(!S.dead&&S.silk>=1){
+    S.dead=true;S.deadStep=S.step;
+    emit('death',{gen:S.gen,seed:S.seed,kills:S.kills,bites:S.bites,
+      ageSteps:S.step-S.genStep});
+  }
+  if(S.dead&&S.step-S.deadStep>110){
+    const g=S.gen+1,ds=S.deadStep;
+    const px=S.px,pxa=S.px;
+    S=Object.assign(simGenesis(),{
+      step:S.step,gen:g,genStep:S.step,seed:genSeedFor(g,ds),
+      px,pxAth:pxa,bar:-1,barHi:px,barClose:px,athRun:0,
+      flow:S.flow,vol:0,sellAcc:0,buyAcc:0,debt:0,silk:.04,
+      ckStep:S.ckStep,ckHash:S.ckHash,ckLog:S.ckLog,epoch:S.epoch});
+    emit('hatch',{gen:g,seed:S.seed});
+    return;
+  }
+
+  for(let i=S.spiders.length-1;i>=0;i--){
+    const s=S.spiders[i];
+    s.pt=s.t;
+    if(s.dying){s.dying+=.16;if(s.dying>1)S.spiders.splice(i,1);continue;}
+    if(S.dead){s.t=s.t+(.06-s.t)*.02;continue;}
+    s.t-=s.sp*2*(1+S.outFlow*.25);
+    s.step+=.28;
+    const tk=Math.floor(s.step*1.6);
+    if(tk!==s.lastTk){s.lastTk=tk;if(tk>0)emit('crawl',{spoke:s.spoke,t:s.t,size:s.size});}
+    if(s.t<=.09){
+      S.bites++;
+      S.debt+=SIMC.BITE_DEBT*(0.55+0.45*Math.min(3,s.size)/3);
+      emit('bite',{size:s.size,debt:S.debt,silk:S.silk});
+      S.spiders.splice(i,1);continue;
+    }
+  }
+
+  for(let i=S.shots.length-1;i>=0;i--){
+    const sh=S.shots[i];
+    if(sh.pend!==undefined){
+      if(--sh.pend<=0){S.shots.splice(i,1);simFireShot(sh.size,i+1);}
+      continue;
+    }
+    sh.px=sh.x;sh.py=sh.y;
+    sh.life+=D;
+    let best=null,bd=1e9;
+    for(const s of S.spiders){
+      if(s.dying)continue;
+      const p=spokeStatic(s.spoke,s.t);
+      const d=Math.hypot(p[0]-sh.x,p[1]-sh.y);
+      if(d<bd){bd=d;best=s;}
+    }
+    if(best){
+      const p=spokeStatic(best.spoke,best.t);
+      const dx=p[0]-sh.x,dy=p[1]-sh.y,dl=Math.hypot(dx,dy)||1;
+      sh.vx=sh.vx+(dx/dl*2.4-sh.vx)*.44;
+      sh.vy=sh.vy+(dy/dl*2.4-sh.vy)*.44;
+      if(dl<5){
+        best.hp-=sh.size*1.4;
+        emit('spark',{x:p[0],y:p[1]});
+        if(best.hp<=0){
+          best.dying=.01;S.kills++;
+          emit('kill',{x:p[0],y:p[1],spoke:best.spoke,size:best.size,kills:S.kills});
+        }else emit('hit',{});
+        S.shots.splice(i,1);continue;
+      }
+    }else{
+      // with no target a shot takes its own spot on a circle around the web:
+      // the reserve reads as a defense, not as a pile in one spot
+      const slot=sh.id%24,pa=slot/24*6.28319;
+      const tx=WEB.cx+Math.cos(pa)*128,ty=WEB.cy+Math.sin(pa)*74;
+      const dx=tx-sh.x,dy=ty-sh.y,dl=Math.hypot(dx,dy)||1;
+      const sp2=Math.min(1.1,dl*.06);
+      sh.vx=sh.vx+((dx/dl)*sp2-sh.vx)*.12;
+      sh.vy=sh.vy+((dy/dl)*sp2-sh.vy)*.12;
+    }
+    sh.x+=sh.vx*2;sh.y+=sh.vy*2;
+    if(sh.x<-24||sh.x>RW+24||sh.y<-40||sh.y>RH+40)S.shots.splice(i,1);
+  }
+}
+function simHash(){
+  let h=2166136261;
+  const p=(v)=>{h=(Math.imul(h^(v|0),16777619))>>>0;};
+  p(S.step);p(S.gen);p(S.seed);
+  p(S.px*1e9);p(S.pxAth*1e9);p(S.barClose*1e9);p(S.athRun|0);p(S.flow*1e6);p(S.silk*100000);p(S.debt*100000);
+  p(S.kills);p(S.bites);p(S.evCount);p(S.dead?1:0);
+  p(S.spiders.length);p(S.shots.length);
+  for(const s of S.spiders){p(s.spoke);p(s.t*100000);p(s.hp*1000);}
+  for(const s of S.shots){p(s.pend===undefined?(s.x*100):-1);p(s.y*100);}
+  return (h>>>0).toString(16).padStart(8,'0');
+}
+
+/* ── FEED LAYER ──────────────────────────────────────────────
+   The single source of events for the simulation. An event:
+     {ts, side:+1|-1, sol, px, blk, sig}
+   Canonical order: step by ts, within a step - (blk, sig).
+   Implementations:
+     demo          - deterministic generator, trade = a function of the step
+     geckoterminal - polling a public API, works without a key
+     endpoint      - our own event log (phase 3), the same format
+   ──────────────────────────────────────────────────────────── */
+const FEEDCFG={
+  mode:      'demo',      // demo | provider | csv
+  network:   'solana',
+  pool:      '',          // for provider
+  dataUrl:   'data/',     // for csv: directory with the static log
+  pollMs:    4000,
+  staleMs:   45000,
+  allowSolo: false,       // provider without shared state - only deliberately
+  mint:      ''           // for provider: the pool is found via the mint
+};
+/* The config can be set without editing this file.
+   Editing 100 KB of HTML during deployment is the most fragile point
+   in the whole process, so there are two ways, in priority order:
+
+     1. URL parameters:  ?mode=csv&data=/data/
+     2. separate file:   /savefly.config.json next to the page
+        { "mode": "csv", "dataUrl": "/data/", "pollMs": 4000 }
+
+   The file is loaded before startup, so ops changes one small
+   json, not the game. Only known keys are allowed - a foreign file
+   cannot, for example, enable allowSolo. */
+const CFG_KEYS={mode:1,dataUrl:1,pollMs:1,network:1,pool:1,mint:1,staleMs:1};
+function applyCfg(o,src){
+  if(!o||typeof o!=='object')return;
+  for(const k in o){
+    if(!CFG_KEYS[k])continue;
+    const v=o[k];
+    if(k==='mode'&&['demo','csv','provider'].indexOf(v)<0)continue;
+    if(typeof v==='number'&&!Number.isFinite(v))continue;
+    FEEDCFG[k]=v;
+    FEED_CFG_SRC.push(k+'='+v+' ('+src+')');
+    /* An explicit mode:"provider" in the config is a deliberate choice, not
+       the accident allowSolo was protecting against. Without this the live
+       mode on static hosting (GitHub Pages) was unreachable:
+       the config set provider, the game silently fell back to simulation, and
+       it looked as if live data was impossible without a VPS. */
+    if(k==='mode'&&v==='provider')FEEDCFG.allowSolo=true;
+  }
+}
+const FEED_CFG_SRC=[];
+try{
+  const q=new URLSearchParams(location.search);
+  const o={};
+  for(const k in CFG_KEYS){
+    if(!q.has(k))continue;
+    const raw=q.get(k);
+    o[k]=/^(pollMs|staleMs)$/.test(k)?+raw:raw;
+  }
+  applyCfg(o,'url');
+}catch(e){}
+async function loadCfgFile(){
+  try{
+    const r=await fetch('savefly.config.json',{cache:'no-store'});
+    if(!r.ok)return;
+    applyCfg(await r.json(),'config');
+  }catch(e){}
+}
+const FEED={
+  seed:0x7EAD51,rate:.40,bias:.56,
+  byStep:new Map(),seen:new Set(),
+  state:'demo',pool:'',priceUnit:'',metaWarn:'',shared:false,waiting:false,notConfigured:false,indexLag:0,ckFrom:0,ckHashSeed:'',ckReject:'',
+  maxStep:0,maxStepAt:0,metaLastStep:0,metaUpdated:0,metaGaps:0,lastEventTs:0,lastPollOk:0,
+  stats:{seen:0,applied:0,late:0,clamped:0,polls:0,errs:0},
+  backoff:1000,timer:null,
+
+  // ── demo: a trade is a pure function of the step number ──
+  demoAt(step){
+    const per=this.rate*(SIMC.STEP_MS/1000);
+    if(srnd(this.seed,step,1)>per)return null;
+    const side=srnd(this.seed,step,2)<this.bias?1:-1;
+    const whale=srnd(this.seed,step,3)<.10;
+    const size=whale?(1.6+srnd(this.seed,step,4)*1.4)
+                    :(.35+srnd(this.seed,step,5)*.85);
+    const sol=Math.pow(2,(size-0.22)/SIMC.SIZE_K)-1;
+    return{id:step,side,size,
+      sol:sol*SIMC.SIZE_REF*(.7+srnd(this.seed,step,6)*.6),
+      dpx:side*size*.0022*(.5+srnd(this.seed,step,7))};
+  },
+
+  stepOf(tsMs){return Math.floor((tsMs-SIMC.GENESIS_TS)/SIMC.STEP_MS);},
+
+  push(ev){
+    if(this.seen.has(ev.sig))return false;
+    this.seen.add(ev.sig);
+    if(this.seen.size>4000){
+      // keep the key window bounded
+      let n=0;for(const k of this.seen){this.seen.delete(k);if(++n>1500)break;}
+    }
+    this.stats.seen++;
+    let st=this.stepOf(ev.ts);
+    if(st<S.step){
+      // A direct provider indexes with a delay, so some trades
+      // arrive stamped in the past. Dropping them loses real
+      // data, so we clamp them to the current step within a tolerance.
+      // With our own log (endpoint) this does not happen: there the order
+      // is guaranteed by the source, and clamping is off.
+      if(this.shared||S.step-st>SIMC.LATE_GRACE){this.stats.late++;return false;}
+      st=S.step+1;this.stats.clamped++;
+    }
+    let a=this.byStep.get(st);
+    if(!a){a=[];this.byStep.set(st,a);}
+    a.push(ev);
+    // canonical order within a step
+    a.sort((x,y)=>(x.blk-y.blk)||(x.sig<y.sig?-1:x.sig>y.sig?1:0));
+    if(ev.ts>this.lastEventTs)this.lastEventTs=ev.ts;
+    if(st>this.maxStep){this.maxStep=st;this.maxStepAt=Date.now();}
+    return true;
+  },
+
+  eventsFor(step){
+    if(FEEDCFG.mode==='demo'){
+      const e=this.demoAt(step);
+      return e?[e]:null;
+    }
+    const a=this.byStep.get(step);
+    if(a){this.byStep.delete(step);this.stats.applied+=a.length;}
+    // drop tails that will no longer be needed
+    if((step&1023)===0)for(const k of this.byStep.keys())if(k<step-40)this.byStep.delete(k);
+    return a||null;
+  },
+
+  health(){
+    /* Without a feed, spiders and shots are generated, not from the market. A viewer on
+       the token page must see this, otherwise they will take invented
+       activity for real. "no feed" did not say that. */
+    if(FEED.notConfigured)return{s:'demo',txt:'not configured'};
+    if(FEED.waiting)return{s:'demo',txt:'waiting for feed'};
+    if(FEEDCFG.mode==='demo')return{s:'demo',txt:'simulated'};
+    const now=Date.now();
+    if(this.state==='error')return{s:'error',txt:'feed error'};
+    if(this.state==='init')return{s:'init',txt:'feed connecting'};
+    if(now-this.lastPollOk>FEEDCFG.staleMs)return{s:'stale',txt:'feed stalled'};
+    // the log may be reachable but abandoned: the collector died and the files
+    // remained. We look at the age of meta.updated, not just at our own polls.
+    if(this.metaUpdated&&now-this.metaUpdated>FEEDCFG.staleMs*3)
+      return{s:'stale',txt:'log stale'};
+    // Live data without a collector: each viewer has their own history from
+    // the last ~300 trades, so the state is not shared. We say so plainly.
+    if(!this.shared)return{s:'live',txt:'live · solo'};
+    return{s:'live',txt:'live'};
+  },
+
+  // ── seeding: all-time high price + starting price ──
+  async seedAth(){
+    const u=`https://api.geckoterminal.com/api/v2/networks/${FEEDCFG.network}`
+      +`/pools/${FEEDCFG.pool}/ohlcv/day?aggregate=1&limit=1000`;
+    const r=await fetch(u,{headers:{Accept:'application/json'}});
+    if(!r.ok)throw new Error('ohlcv '+r.status);
+    const j=await r.json();
+    const lst=(j.data&&j.data.attributes&&j.data.attributes.ohlcv_list)||[];
+    if(!lst.length)throw new Error('ohlcv empty');
+    let hi=0,last=0;
+    for(const c of lst){if(c[2]>hi)hi=c[2];}
+    last=lst[0][4];
+    return{ath:hi,last};
+  },
+
+  async fetchTrades(){
+    const u=`https://api.geckoterminal.com/api/v2/networks/${FEEDCFG.network}`
+      +`/pools/${FEEDCFG.pool}/trades`;
+    const r=await fetch(u,{headers:{Accept:'application/json'}});
+    if(!r.ok)throw new Error('trades '+r.status);
+    const j=await r.json();
+    const out=[];
+    for(const x of (j.data||[])){
+      const a=x.attributes;
+      const buy=a.kind==='buy';
+      const sol=parseFloat(buy?a.from_token_amount:a.to_token_amount);
+      const px=parseFloat((buy?a.price_to_in_usd:a.price_from_in_usd)||0);
+      if(!(sol>0))continue;
+      out.push({ts:Date.parse(a.block_timestamp),side:buy?1:-1,
+        sol,px,blk:a.block_number|0,sig:a.tx_hash});
+    }
+    return out;
+  },
+
+  // ── csv source: a static log written by the collector ──
+  //    All clients read the same files, so the event stream
+  //    is identical and the state hash converges. The tail of the current hour
+  //    is fetched with a Range request, i.e. we only pull the increment.
+  csv:{shard:null,off:0,done:{},tails:{}},
+  parseCsv(txt,skipHead){
+    const out=[],lines=txt.split('\n');
+    for(let i=0;i<lines.length;i++){
+      const l=lines[i];
+      if(!l)continue;
+      if(l.charCodeAt(0)===115){continue;}   // header row
+      const c=l.split(',');
+      if(c.length<7)continue;
+      const ev={step:+c[0],ts:+c[1],side:+c[2],sol:+c[3],
+        px:+c[4],blk:+c[5],sig:c[6]};
+      if(!ev.sig||!isFinite(ev.ts))continue;
+      out.push(ev);
+    }
+    return out;
+  },
+  shardName(tsMs){
+    const d=new Date(tsMs),p=(n)=>String(n).padStart(2,'0');
+    return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())}`
+          +`T${p(d.getUTCHours())}.csv`;
+  },
+  /* Death registry. This is the render layer: it does not affect state, it only
+     shows the viewer the generations that have already died. Read once
+     at startup and then after every death.
+     There may be several files - one per collector. */
+  async fetchDeaths(meta){
+    const files=[];
+    if(meta&&meta.deathsFile)files.push(meta.deathsFile);
+    else files.push('deaths-A.csv','deaths.csv');
+    const seen={},out=[];
+    for(const f of files){
+      let txt=null;
+      try{
+        const r=await fetch(FEEDCFG.dataUrl+f,{cache:'no-store'});
+        if(!r.ok)continue;
+        txt=await r.text();
+      }catch(e){continue;}
+      for(const l of txt.split('\n')){
+        if(!l||l[0]==='g')continue;
+        const c=l.split(',');
+        if(c.length<12)continue;
+        const gen=+c[0];
+        if(!Number.isFinite(gen)||seen[gen])continue;
+        seen[gen]=1;
+        out.push({gen,step:+c[1],ts:+c[2],seed:c[3],name:c[4],title:c[5],
+          ageSteps:+c[6],kills:+c[7],bites:+c[8],px:+c[9],pxAth:+c[10],sig:c[11]});
+      }
+    }
+    out.sort((a,b)=>b.gen-a.gen);
+    return out;
+  },
+  async fetchCheckpoint(){
+    // The latest state snapshot. Gives a cold start in tens of milliseconds
+    // instead of replaying the log from genesis.
+    // state.json - the materialized head of the snapshot log.
+    // The checkpoints.jsonl log grows forever and is only needed for
+    // verification, the client does not need it.
+    const r=await fetch(FEEDCFG.dataUrl+'state.json',{cache:'no-store'});
+    if(!r.ok)return null;
+    const o=await r.json();
+    return (o&&o.step!==undefined)?o:null;
+  },
+  async fetchMeta(){
+    const r=await fetch(FEEDCFG.dataUrl+'meta.json',{cache:'no-store'});
+    if(!r.ok)throw new Error('meta '+r.status);
+    return r.json();
+  },
+  // name may include a collector subdirectory: events/A/2026-...csv
+  async fetchShard(name,fromByte){
+    const hdr={};
+    if(fromByte>0)hdr.Range='bytes='+fromByte+'-';
+    const u=name.indexOf('/')>=0?(FEEDCFG.dataUrl+name)
+                                :(FEEDCFG.dataUrl+'events/'+name);
+    const r=await fetch(u,{headers:hdr,cache:'no-store'});
+    if(r.status===416)return{txt:'',size:fromByte};   // no increment
+    if(!r.ok&&r.status!==206)throw new Error('shard '+r.status);
+    const txt=await r.text();
+    return{txt,size:fromByte+txt.length,partial:r.status===206};
+  },
+  async pollCsv(){
+    // The tail shard name is dictated by meta.json, not computed from
+    // the hour. Otherwise size rotation (the collector moves to .1
+    // after 4 MB) or an hour rollover cut off live events: the client
+    // would pull a file that no longer grows.
+    let meta=null;
+    try{meta=await this.fetchMeta();}catch(e){}
+    let list=(meta&&Array.isArray(meta.shards)&&meta.shards.length)
+      ?meta.shards.slice():null;
+    if(!list){
+      // meta unavailable - stick with what we already read
+      list=this.csv.shard?[this.csv.shard]:[this.shardName(Date.now())];
+    }
+    if(meta&&Number.isFinite(meta.lastStep)&&meta.lastStep>this.maxStep)
+      this.metaLastStep=meta.lastStep;
+    if(meta&&Number.isFinite(meta.updated))this.metaUpdated=meta.updated;
+    if(meta&&Number.isFinite(meta.gaps))this.metaGaps=meta.gaps;
+    // There may be several collectors, each with its own subdirectory.
+    // We pull the tail from each separately: one's downtime is covered
+    // by another, and dedupe by sig removes the overlap.
+    const byWriter={};
+    for(const s of list){
+      const i=s.lastIndexOf('/');
+      const w=i>=0?s.slice(0,i):'';
+      byWriter[w]=s;   // the list is already in canonical order
+    }
+    const tails=Object.values(byWriter);
+    let got=[];
+    // 1. shards that appeared between polls are read in full
+    for(const s of list){
+      if(tails.indexOf(s)>=0||this.csv.done[s])continue;
+      try{
+        const r=await this.fetchShard(s,0);
+        got=got.concat(this.parseCsv(r.txt));
+        this.csv.done[s]=1;
+      }catch(e){}
+    }
+    // 2. each collector's tail is read incrementally
+    if(!this.csv.tails)this.csv.tails={};
+    for(const t of tails){
+      const i=t.lastIndexOf('/');
+      const w=i>=0?t.slice(0,i):'';
+      const cur=this.csv.tails[w];
+      if(cur&&cur.name!==t){this.csv.done[cur.name]=1;}
+      if(!cur||cur.name!==t)this.csv.tails[w]={name:t,off:0};
+      const st=this.csv.tails[w];
+      try{
+        const res=await this.fetchShard(st.name,st.off);
+        if(res.txt){
+          const body=res.partial?res.txt:res.txt.slice(st.off);
+          st.off=res.partial?res.size:res.txt.length;
+          got=got.concat(this.parseCsv(body));
+        }
+      }catch(e){
+        if(!String(e.message).includes('404'))throw e;
+      }
+    }
+    this.csv.shard=tails[tails.length-1]||this.csv.shard;
+    return got;
+  },
+  async poll(){
+    try{
+      const evs=FEEDCFG.mode==='csv'
+        ? await this.pollCsv()
+        : await this.fetchTrades();
+      let n=0;for(const e of evs)if(this.push(e))n++;
+      this.stats.polls++;
+      this.lastPollOk=Date.now();
+      this.state='live';
+      this.backoff=1000;
+      return n;
+    }catch(e){
+      this.stats.errs++;
+      this.state=this.stats.polls?'live':'error';
+      this.backoff=Math.min(30000,this.backoff*1.8);
+      return -1;
+    }
+  },
+
+  start(){
+    if(FEEDCFG.mode==='demo')return;
+    this.state='init';
+    const tick=async()=>{
+      await this.poll();
+      this.timer=setTimeout(tick,this.state==='live'?FEEDCFG.pollMs:this.backoff);
+    };
+    tick();
+  },
+  stop(){if(this.timer)clearTimeout(this.timer);this.timer=null;}
+};
+
+/* Target step.
+   In live modes it is computed from the DATA, not from the client's absolute
+   clock: the anchor is the newest known event, and local time
+   only measures how much has passed since we saw it.
+   Browser clocks are often off by minutes; without this a client with
+   a clock behind got stuck in the past, and its hash did not converge
+   with the rest.
+   The upper bound is the same: we do not run the simulation into the void if the collector
+   died - the fly freezes shortly after the last known event. */
+function targetStep(nowMs){
+  if(FEEDCFG.mode!=='demo'&&FEED.maxStep>0){
+    const since=Math.max(0,nowMs-FEED.maxStepAt);
+    const t=FEED.maxStep+Math.floor(since/SIMC.STEP_MS);
+    return Math.min(t,FEED.maxStep+SIMC.STALL_GRACE);
+  }
+  return Math.floor((nowMs-SIMC.LAG_MS-SIMC.GENESIS_TS)/SIMC.STEP_MS);
+}
+let syncing=0,syncTotal=0,syncFrames=0,syncMs=0;
+const txTimes=[];
+function simCatchUp(nowMs,budgetMs){
+  if(FEEDCFG.mode==='demo'&&epochIdx(nowMs)!==S.epoch){
+    const was=S.epoch;
+    simBoot(nowMs);
+    emit('reanchor',{was,now:S.epoch});
+  }
+  const tgt=targetStep(nowMs);
+  if(tgt<=S.step)return true;
+  const t0=performance.now();
+  while(S.step<tgt){
+    const evs=FEED.eventsFor(S.step);
+    if(evs)for(const ev of evs)simApplyEvent(ev);
+    simStep();
+    if(budgetMs&&(S.step&255)===0&&performance.now()-t0>budgetMs)return false;
+  }
+  return true;
+}
+/* State is replayed not "for the last N hours since opening", but from the
+   boundary of the current absolute epoch. Otherwise two clients that joined at
+   different times would start from different points and diverge forever.
+   Real checkpoints from the worker will plug in here later: epochStep
+   will be replaced by checkpoint.step, and simGenesis() by checkpoint.state. */
+function epochIdx(nowMs){
+  return Math.max(0,Math.floor((nowMs-SIMC.GENESIS_TS)/SIMC.EPOCH_MS));
+}
+function epochStep(nowMs){
+  const per=Math.floor(SIMC.EPOCH_MS/SIMC.STEP_MS);
+  const idx=Math.max(0,Math.floor((nowMs-SIMC.GENESIS_TS)/SIMC.EPOCH_MS));
+  return idx*per;
+}
+/* Live start.
+   Provider limitation: the public trades endpoint only serves
+   the last ~300 trades, i.e. a few minutes. Replaying a 6-hour epoch
+   from it is impossible, so genesis is set to the window the feed actually
+   covers, and ATH is seeded from daily candles.
+   Shared state between clients that joined at different times is guaranteed
+   only via FEEDCFG.endpoint - our own event log (phase 3).
+   A direct provider gives a correct picture, but a separate one for each viewer. */
+async function bootLive(){
+  FEED.state='init';
+  let ckBoot=null;
+  let raw=[],ath=0,last=0,genesis=0,stepMs=SIMC.STEP_MS;
+
+  if(FEEDCFG.mode==='csv'){
+    // Static log: genesis, ATH and step come from meta.json,
+    // written by the collector. This makes the state shared: all clients
+    // count from the same point using the same events.
+    let meta=null;
+    try{meta=await FEED.fetchMeta();}
+    catch(e){FEED.state='error';return false;}
+    genesis=meta.genesisTs;ath=meta.pxAth;stepMs=meta.stepMs||50;
+    SIMC.STEP_MS=stepMs;
+    if(meta.pool){SIMC.GENESIS_SEED=seedFromString(String(meta.pool));FEED.pool=String(meta.pool);}
+    else{
+      // without pool the seed stays a demo constant, and the DNA will not match
+      // the one the collector computed
+      FEED.metaWarn='meta.json has no pool: first-generation DNA is not tied to the token';
+      if(typeof console!=='undefined')console.warn('[savefly] '+FEED.metaWarn);
+    }
+    if(meta.priceUnit)FEED.priceUnit=meta.priceUnit;
+    SIMC.GENESIS_TS=genesis;
+    SIMC.LAG_MS=Math.max(8000,FEEDCFG.pollMs*2+8000);
+    FEED.shared=true;
+
+    // 1. the latest state snapshot, if any
+    let ck=null;
+    try{ck=await FEED.fetchCheckpoint();}catch(e){}
+    if(ck){
+      const why=ckValid(ck,meta);
+      if(why){ck=null;FEED.ckReject=why;}
+    }
+
+    // 2. events are pulled only from the snapshot step onward. Archived shards
+    //    are of no interest: the state is already in the snapshot.
+    const fromStep=ck?ck.step:0;
+    const all=(meta.shards||[]);
+    const need=ck?all.slice(-3):all.slice(-8);
+    const lastOf={};
+    for(const s of all){const i=s.lastIndexOf('/');lastOf[i>=0?s.slice(0,i):'']=s;}
+    const tails=Object.values(lastOf);
+    FEED.csv.tails={};
+    for(const s of need){
+      try{
+        const r=await FEED.fetchShard(s,0);
+        for(const e of FEED.parseCsv(r.txt))if(e.step>=fromStep)raw.push(e);
+        if(tails.indexOf(s)>=0){
+          const i=s.lastIndexOf('/');
+          FEED.csv.tails[i>=0?s.slice(0,i):'']={name:s,off:r.txt.length};
+        }else FEED.csv.done[s]=1;
+      }catch(e){}
+    }
+    FEED.csv.shard=tails[tails.length-1]||null;
+    ckBoot=ck;
+    refreshNecro(meta);
+    last=raw.length?raw[raw.length-1].px:(ck?ck.px:ath);
+    if(!raw.length&&!ck){FEED.state='error';return false;}
+  }else{
+    /* Pool via mint. On static hosting it is simpler to enter the token
+       address than to look up the pool address: the aggregator returns the token's pools,
+       we take the most liquid one. */
+    if(!FEEDCFG.pool&&FEEDCFG.mint){
+      try{
+        const r=await fetch('https://api.geckoterminal.com/api/v2/networks/'
+          +FEEDCFG.network+'/tokens/'+FEEDCFG.mint+'/pools',
+          {headers:{Accept:'application/json'}});
+        const j=await r.json();
+        const list=(j&&j.data)||[];
+        list.sort((a,b)=>(+(b.attributes.reserve_in_usd||0))-(+(a.attributes.reserve_in_usd||0)));
+        if(list.length)FEEDCFG.pool=list[0].id.replace(/^[a-z_]+_/,'');
+      }catch(e){}
+      if(!FEEDCFG.pool){FEED.state='error';return false;}
+    }
+    if(FEEDCFG.pool){
+      SIMC.GENESIS_SEED=seedFromString(String(FEEDCFG.pool));
+      FEED.pool=String(FEEDCFG.pool);
+    }
+    try{const s=await FEED.seedAth();ath=s.ath;last=s.last;}
+    catch(e){FEED.state='error';return false;}
+    try{raw=await FEED.fetchTrades();}
+    catch(e){FEED.state='error';return false;}
+    if(!raw.length){FEED.state='error';return false;}
+    const now=Date.now();
+    let newest=0;for(const e of raw)if(e.ts>newest)newest=e.ts;
+    FEED.indexLag=Math.max(0,now-newest);
+    SIMC.LAG_MS=Math.min(90000,FEED.indexLag+FEEDCFG.pollMs*2+4000);
+    genesis=Math.min.apply(null,raw.map(e=>e.ts));
+    SIMC.GENESIS_TS=genesis;
+    FEED.shared=false;
+  }
+
+  if(ckBoot){
+    S=simRestore(ckBoot);
+    FEED.ckFrom=ckBoot.step;FEED.ckHashSeed=ckBoot.hash||'';
+    if(ckBoot.step>FEED.maxStep){FEED.maxStep=ckBoot.step;FEED.maxStepAt=Date.now();}
+  }else{
+    S=simGenesis();
+    S.step=0;S.genStep=0;S.epoch=0;
+    S.px=last||ath;S.pxAth=Math.max(ath,S.px);
+    S.silk=cl(1-S.px/Math.max(1e-12,S.pxAth),0,1);
+  }
+
+  FEED.byStep.clear();FEED.seen.clear();
+  for(const e of raw)FEED.push(e);
+
+  syncTotal=Math.max(0,targetStep(Date.now()));syncing=syncTotal;
+  FEED.lastPollOk=Date.now();FEED.state='live';FEED.stats.polls=1;
+  FEED.start();
+  return true;
+}
+const CK_FIELDS=['step','gen','genStep','seed','px','pxAth','bar','barHi','barClose','athRun','flow','vol','sellAcc','buyAcc',
+  'debt','silk','inFlow','outFlow','kills','bites','dead','deadStep',
+  'evCount','nextId','ckStep','ckHash','epoch'];
+// A snapshot is the collector's claim. We accept it only if it is
+// consistent with the log: otherwise a corrupted or foreign state.json
+// would freeze the fly in a garbage state forever.
+function ckValid(o,meta){
+  if(!o||typeof o!=='object')return 'missing';
+  const num=(v)=>Number.isFinite(v);
+  if(!num(o.step)||o.step<0)return 'step';
+  // a bound from time itself: the step cannot be far ahead
+  // of what is possible at all since genesis
+  const maxPlausible=Math.floor((Date.now()-SIMC.GENESIS_TS)/SIMC.STEP_MS)
+    +SIMC.LATE_GRACE*4;
+  if(o.step>maxPlausible)
+    return 'step in the future ('+o.step+' > '+maxPlausible+')';
+  if(meta&&num(meta.lastStep)&&o.step>meta.lastStep+SIMC.LATE_GRACE*4)
+    return 'step ahead of the log ('+o.step+' vs '+meta.lastStep+')';
+  if(!num(o.px)||o.px<=0)return 'px';
+  if(!num(o.pxAth)||o.pxAth<=0)return 'pxAth';
+  if(!num(o.silk)||o.silk<0||o.silk>1.06)return 'silk';
+  if(!num(o.debt)||o.debt<0)return 'debt';
+  if(!Number.isInteger(o.gen)||o.gen<1)return 'gen';
+  if(!Number.isInteger(o.kills)||o.kills<0)return 'kills';
+  if(!Number.isInteger(o.bites)||o.bites<0)return 'bites';
+  if(o.spiders&&!Array.isArray(o.spiders))return 'spiders';
+  if(o.shots&&!Array.isArray(o.shots))return 'shots';
+  // Entities too: a spoke outside the web crashed spokeStatic, and a NaN
+  // in t poisoned the state irreversibly.
+  for(const a of (o.spiders||[])){
+    if(!Array.isArray(a)||a.length<11)return 'spider shape';
+    if(!Number.isInteger(a[1])||a[1]<0||a[1]>=WEB.spokes)return 'spider spoke='+a[1];
+    for(let k of [2,3,4,5,6,7,8])if(!num(a[k]))return 'spider field '+k;
+    if(a[2]<-0.5||a[2]>1.5||a[3]<-0.5||a[3]>1.5)return 'spider t';
+    if(a[4]<=0||a[4]>3.001)return 'spider size='+a[4];
+  }
+  for(const a of (o.shots||[])){
+    if(!Array.isArray(a)||!a.length)return 'shot shape';
+    if(a[0]==='p'){if(!num(a[1])||!num(a[2]))return 'shot pend';}
+    else if(a[0]==='f'){
+      if(a.length<10)return 'shot shape f';
+      for(let k=2;k<=9;k++)if(!num(a[k]))return 'shot field '+k;
+    }else return 'shot type';
+  }
+  return null;
+}
+function simRestore(o){
+  const S=simGenesis();
+  for(const k of CK_FIELDS)if(o[k]!==undefined)S[k]=o[k];
+  S.ckLog=[];
+  S.spiders=(o.spiders||[]).map(a=>({id:a[0],spoke:a[1],t:a[2],pt:a[3],
+    size:a[4],hp:a[5],sp:a[6],wob:a[7],step:a[8],lastTk:a[9],dying:a[10]}));
+  S.shots=(o.shots||[]).map(a=>a[0]==='p'
+    ?{pend:a[1],size:a[2]}
+    :{id:a[1],x:a[2],y:a[3],px:a[4],py:a[5],vx:a[6],vy:a[7],size:a[8],life:a[9]});
+  return S;
+}
+function simBoot(now){
+  now=now||Date.now();
+  S=simGenesis();
+  S.px=1;S.pxAth=1;
+  const tgt=targetStep(now);
+  const st=Math.min(epochStep(now),Math.max(0,tgt));
+  S.step=st;S.genStep=st;S.epoch=epochIdx(now);
+  syncTotal=Math.max(0,tgt-st);syncing=syncTotal;
+}
+
+
+function nearestSpiderDist(){
+  let bd=1e9;
+  for(const s of S.spiders){
+    if(s.dying)continue;
+    const p=spokeStatic(s.spoke,s.t);
+    const d=Math.hypot(p[0]-WEB.cx,p[1]-WEB.cy);
+    if(d<bd)bd=d;}
+  return bd;
+}
+function moodOf(){
+  if(dead)return['cocooned',C.sk1,'dead'];
+  if(forced)return[forced,{calm:C.g1,hopeful:C.g0,euphoric:C.y0,enraged:C.sr0,
+    frantic:C.y1,terrified:C.sr1,exhausted:C.gy1,resigned:C.gy2}[forced]||C.gy0,forced];
+  const sd=nearestSpiderDist();
+  if(sd<26)return['terrified',C.sr1,'terrified'];
+  if(sd<64||outFlow>1.3)return['frantic',C.y1,'frantic'];
+  if(outFlow>.7&&inFlow>.7)return['enraged',C.sr0,'enraged'];
+  if(silk>.80)return['resigned',C.gy2,'resigned'];
+  if(silk>.56)return['exhausted',C.gy1,'exhausted'];
+  if(inFlow>1.4)return['euphoric',C.y0,'euphoric'];
+  if(inFlow-outFlow>.30)return['hopeful',C.g0,'hopeful'];
+  return['calm',C.g1,'calm'];
+}
+function updFly(dt){
+  const f=FLY;
+  f.ph+=.03*dt;
+  f.tremble*=Math.pow(.93,dt);
+  f.drift=Math.sin(f.ph*.6)*1.4*(1-silk*.8);
+  f.x=WEB.cx+f.drift;
+  f.y=WEB.cy+Math.sin(f.ph*.45)*1.0*(1-silk*.8);
+  const st=moodOf()[2];
+  if(st!==f.lastSt){f.trans=1;f.blink=1;f.dbl=Math.random()<.4?1:0;f.lastSt=st;}
+  f.trans=Math.max(0,f.trans-.045*dt);
+  f.blinkT-=dt;
+  if(f.blink>0){f.blink-=.085*dt;
+    if(f.blink<=0&&f.dbl>0){f.dbl=0;f.blink=.8;}
+  }else if(f.blinkT<0){f.blink=1;f.dbl=Math.random()<.2?1:0;
+    f.blinkT=100+Math.random()*180;}
+  f.sacT-=dt;
+  if(f.sacT<0){f.sacTgt=(Math.random()-.5)*1.6;f.sacT=24+Math.random()*80;}
+  f.sac=lerp(f.sac,f.sacTgt,cl(.22*dt,0,1));
+  f.twitchT-=dt;
+  if(f.twitch>0)f.twitch-=.05*dt;
+  else if(f.twitchT<0){f.twitch=1;f.twitchT=160+Math.random()*400;}
+  if(Math.random()<.004*dt)f.antL=1;
+  if(Math.random()<.004*dt)f.antR=1;
+  f.antL*=Math.pow(.88,dt);f.antR*=Math.pow(.88,dt);
+  const tgt=FACE[st]||FACE.calm,nb=FACE.calm;
+  for(const k of FKEYS){
+    let tv=nb[k]+(tgt[k]-nb[k])*(1-f.trans*.85);
+    if(k==='flutter'){
+      tv=cl(tv*(1-silk*.9),0,1);
+      if(webBuzz>.3)tv=Math.max(tv,webBuzz*.5);}
+    if(k==='struggle')tv=cl(tv*(1-silk*.55)+f.tremble*.5,0,1);
+    if(k==='anten'){tv-=silk*.5;tv=Math.max(tv,f.twitch*.5);}
+    if(k==='glint')tv*=(1-silk*.4);
+    if(k==='prob')tv=Math.max(tv,f.twitch*.3);
+    if(k==='bright')tv*=(1-silk*.5);
+    f.f[k]=lerp(f.f[k],tv,cl(FRATE[k]*dt*(1+f.trans),0,1));
+  }
+  f.wingPh+=(.12+f.f.flutter*1.5)*dt;
+  if(!dead){
+    if(f.f.struggle>.6&&Math.random()<.02*dt)addFx('silkpuff',1);
+    if(moodOf()[2]==='terrified'&&Math.random()<.02*dt)addFx('sweat',1);
+    if(inFlow>1&&Math.random()<.02*dt)addFx('heart',1);
+    if(silk>.7&&Math.random()<.012*dt)addFx('tear',1);}
+  if(dead){cocoonT=Math.min(1,cocoonT+.006*dt);deadT+=dt;}
+}
+
+const SKY_DAY=['#a8ecff','#84d8f8','#62bcec','#4aa4dc','#3a8cd0','#cfe8f4'];
+const SKY_OVER=['#c8d4dc','#b0bcc8','#94a0b0','#7c8898','#646f80','#dde4e8'];
+const SKY_STORM=['#586078','#484e64','#3a4054','#2c3044','#212434','#6e7488'];
+const SKY_NIGHT=['#1e2248','#1a1c3c','#141830','#101424','#0a0c18','#2a2e58'];
+function mixc(a,b,t){
+  const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);
+  const q=v=>{v=v<0?0:(v>255?255:v);return ((v/8)|0)*8;};
+  return 'rgb('+q(((pa>>16)&255)+(((pb>>16)&255)-((pa>>16)&255))*t)+','
+    +q(((pa>>8)&255)+(((pb>>8)&255)-((pa>>8)&255))*t)+','
+    +q((pa&255)+((pb&255)-(pa&255))*t)+')';
+}
+function skyRamp(w){
+  const A=[SKY_DAY,SKY_OVER,SKY_STORM,SKY_NIGHT];
+  const seg=cl(w,0,.9995)*3,i=seg|0,t=seg-i;
+  return SKY_DAY.map((_,k)=>mixc(A[i][k],A[i+1][k],t));
+}
+let wx=0,wxT=0,skyKey=-1,flash=0,boltT=240,bolt=null,thQ=0,windPh=0;
+const clouds=[],rainF=[],rainN=[],birds=[],stars=[];
+let bgTile=null,fgTile=null;
+function initWeather(){
+  const r=rnd(5150);
+  for(let i=0;i<8;i++)clouds.push({x:r()*RW,y:6+r()*74,s:.55+r()*.95,
+    sp:.035+r()*.085,seed:(r()*999999)|0,t:null});
+  for(let i=0;i<72;i++)rainF.push({x:r()*RW,y:r()*RH,v:1.5+r()*1.1,len:3+((r()*3)|0)});
+  for(let i=0;i<54;i++)rainN.push({x:r()*RW,y:r()*RH,v:2.5+r()*1.9,len:4+((r()*4)|0)});
+  for(let i=0;i<3;i++)birds.push({x:r()*RW,y:18+r()*38,sp:.14+r()*.14,ph:r()*6});
+  for(let i=0;i<46;i++)stars.push({x:(r()*RW)|0,y:(r()*140)|0,b:r()});
+}
+function cloudTile(c,ramp,w){
+  const TW=Math.ceil(52*c.s)+6,TH=Math.ceil(26*c.s)+6;
+  if(!c.t||c.t.w!==TW){
+    c.t={fb:mkFB(TW,TH),w:TW,h:TH};
+  }
+  fbClear(c.t.fb);
+  const sv=fbPush(c.t.fb);
+  const dark=cl((w-.12)*1.35,0,1);
+  const top=mixc('#ffffff',mixc('#8c94a8','#2c3244',cl((w-.45)/.55,0,1)),dark);
+  const mid=mixc('#f4fafc',mixc('#6c7488','#20243a',cl((w-.45)/.55,0,1)),dark);
+  const bot=mixc('#dce8f4',mixc('#4c5468','#171a2c',cl((w-.45)/.55,0,1)),dark);
+  const r=rnd(c.seed);
+  const n=4+((r()*3)|0);
+  const base=TH-4-Math.round(2*c.s);
+  const lobes=[];
+  for(let i=0;i<n;i++){
+    const lx=4+(TW-8)*((i+.5)/n)+(r()-.5)*4*c.s;
+    const rr=(6+r()*7)*c.s;
+    lobes.push([lx,base-rr*.55,rr,rr*(.62+r()*.3)]);
+  }
+  for(const L of lobes)pdisc(L[0],L[1],L[2],L[3],mid);
+  pr(2,base-2,TW-4,3,mid);
+  for(const L of lobes)pdisc(L[0]-L[2]*.18,L[1]-L[3]*.34,L[2]*.62,L[3]*.52,top);
+  pr(2,base,TW-4,2,bot);
+  for(const L of lobes)pdisc(L[0]+L[2]*.22,L[1]+L[3]*.42,L[2]*.52,L[3]*.34,bot);
+  if(w<.35){
+    for(const L of lobes)ps(Math.round(L[0]-L[2]*.5),Math.round(L[1]-L[3]*.5),'#ffffff');
+  }
+  fbPop(sv);fbIndex(c.t.fb);
+}
+function mkBgTile(){
+  if(!bgTile)bgTile=mkFB(RW,RH);
+  const sv=fbPush(bgTile);fbClear(bgTile);
+  const R=skyRamp(wx),rows=[0,26,58,94,132,168];
+  for(let i=0;i<5;i++){
+    const y0=rows[i],y1=rows[i+1];
+    pr(0,y0,RW,y1-y0,R[i]);
+    pdith(0,y1-6,RW,6,R[i+1],3,i%3);
+    pdith(0,y1-3,RW,3,R[i+1],2,i%2);
+  }
+  pr(0,rows[5],RW,RH-rows[5],R[4]);
+  const night=cl((wx-.62)/.38,0,1);
+  if(night>.05){
+    for(const s of stars){
+      if(s.b<1-night)continue;
+      ps(s.x,s.y,s.b>.82?'#ffffff':'#c8d0f0');}
+  }
+  const sunA=cl(1-wx*2.0,0,1);
+  if(sunA>.04){
+    const sx=68,sy=40,sr=9;
+    if(sunA>.35){
+      pring(sx,sy,sr+5,sr+5,'#ffe488');
+      pring(sx,sy,sr+11,sr+11,'#ffd870');
+    }
+    for(let i=0;i<8;i++){
+      const a=i*.7854+Math.sin(T*.004)*.06;
+      const r0=sr+15,r1=sr+21;
+      pline(sx+Math.cos(a)*r0,sy+Math.sin(a)*r0,
+        sx+Math.cos(a)*r1,sy+Math.sin(a)*r1,'#ffe488');
+    }
+    pdisc(sx,sy,sr+2,sr+2,'#ffeea0');
+    pdisc(sx,sy,sr,sr,sunA>.5?'#fff8d0':'#ffe8a8');
+    pdisc(sx-sr*.32,sy-sr*.32,sr*.46,sr*.46,'#ffffff');
+    pring(sx,sy,sr,sr,'#ffd870');
+  }
+  if(night>.25){
+    const mx=246,my=34,mr=8;
+    pdisc(mx,my,mr,mr,'#e8ecf8');
+    pdisc(mx+mr*.42,my-mr*.18,mr*.88,mr*.88,R[0]);
+    pdisc(mx-mr*.34,my+mr*.2,1.4,1.4,'#c4cade');
+    pdisc(mx-mr*.1,my-mr*.42,1,1,'#c4cade');
+    const hl=Math.round(night*3),hr=mr+7;
+    for(let dy=-hr;dy<=hr;dy++){
+      const t=dy/hr;if(t*t>1)continue;
+      const w=Math.round(hr*Math.sqrt(1-t*t));
+      pdithL(mx-w,my+dy,w*2+1,1,'#e8ecf8',hl);
+    }
+  }
+  const hz=152;
+  const hc1=mixc('#5c7a54','#101828',cl(wx*1.15,0,1));
+  const hc2=mixc('#42604a','#0a1020',cl(wx*1.15,0,1));
+  for(let x=0;x<RW;x++){
+    const y=hz+Math.round(Math.sin(x*.026)*5+Math.sin(x*.061+1.3)*3);
+    pr(x,y,1,RH-y,hc1);
+  }
+  for(let x=0;x<RW;x++){
+    const y=hz+9+Math.round(Math.sin(x*.038+2.1)*4+Math.sin(x*.017)*3);
+    pr(x,y,1,RH-y,hc2);
+  }
+  const mist=cl(1-Math.abs(wx-.5)*2.6,0,1);
+  if(mist>.08){
+    pwash(R[5],mist*.30,0,hz-14,RW,26);
+    pwash(R[5],mist*.18,0,hz-24,RW,14);
+  }
+  fbPop(sv);fbIndex(bgTile);
+}
+function mkFgTile(){
+  if(!fgTile)fgTile=mkFB(RW,RH);
+  const sv=fbPush(fgTile);fbClear(fgTile);
+  const bk=mixc('#3a2a1e','#0a0a14',cl(wx*1.1,0,1));
+  const bl=mixc('#54402c','#141420',cl(wx*1.1,0,1));
+  const hi=mixc('#7a5e40','#242430',cl(wx*1.1,0,1));
+  const limb=(x0,y0,ang,len,th,dep,seed)=>{
+    const r=rnd(seed);
+    let x=x0,y=y0,a=ang;
+    for(let i=0;i<len;i++){
+      a+=(r()-.5)*.20;
+      const t=Math.max(1,Math.round(th*(1-i/len*.82)));
+      const px2=Math.round(x)-((t/2)|0),py2=Math.round(y)-((t/2)|0);
+      pr(px2,py2,t,t,i<len*.45?bk:bl);
+      if(t>2)pr(px2,py2,t,1,hi);
+      x+=Math.cos(a);y+=Math.sin(a);
+      if(dep>0&&i>len*.30&&i%Math.round(len*.26)===0)
+        limb(x,y,a+(r()<.5?-1:1)*(.58+r()*.5),len*.42,th*.52,dep-1,seed+i*37);
+    }
+  };
+  limb(-2,58,0.20,70,5,2,11);
+  limb(-2,108,-0.13,54,4,2,29);
+  limb(RW+2,46,Math.PI-0.18,66,5,2,47);
+  limb(RW+2,120,Math.PI+0.15,58,4,2,61);
+  const gr=rnd(1717);
+  const gc1=mixc('#3c5238','#0a0e18',cl(wx*1.1,0,1));
+  const gc2=mixc('#24361f','#06080f',cl(wx*1.1,0,1));
+  pr(0,RH-13,RW,13,gc2);
+  for(let x=0;x<RW;x++){
+    const hh=3+Math.round(Math.sin(x*.09)*2+Math.sin(x*.21+1.4)*1.6);
+    pr(x,RH-13-hh,1,hh,gc2);
+  }
+  for(let cn=0;cn<34;cn++){
+    const cx0=(gr()*RW)|0;
+    const blades=5+((gr()*7)|0);
+    const tall=8+((gr()*16)|0);
+    for(let b=0;b<blades;b++){
+      const x=cx0+b-((blades/2)|0)+((gr()*3)|0)-1;
+      const hh=Math.round(tall*(.55+gr()*.55));
+      const bend=(gr()-.5)*3.4;
+      const col=gr()<.6?gc1:gc2;
+      for(let j=0;j<hh;j++){
+        const t=j/hh;
+        pr(x+Math.round(bend*t*t),RH-12-j,1,1,col);
+      }
+      if(hh>10)ps(x+Math.round(bend),RH-12-hh,gc1);
+    }
+  }
+  fbPop(sv);fbIndex(fgTile);
+}
+function mkBolt(){
+  const r=rnd((Math.random()*999999)|0);
+  const segs=[];let x=30+r()*(RW-60),y=0;
+  while(y<138){
+    const nx=x+(r()-.5)*22,ny=y+8+r()*12;
+    segs.push([x,y,nx,ny]);x=nx;y=ny;
+  }
+  const br=[];
+  for(let i=2;i<segs.length-1;i++){
+    if(r()<.34){
+      let bx=segs[i][2],by=segs[i][3],d=(r()<.5?-1:1);
+      const sub=[];
+      for(let k=0;k<3+((r()*3)|0);k++){
+        const nx=bx+d*(4+r()*10),ny=by+4+r()*9;
+        sub.push([bx,by,nx,ny]);bx=nx;by=ny;}
+      br.push(sub);
+    }
+  }
+  return{segs,br,life:0,x};
+}
+function drawBolt(){
+  if(!bolt)return;
+  const a=1-bolt.life/7;
+  if(a<=0)return;
+  const c=a>.5?'#ffffff':'#d8e4ff';
+  for(const s of bolt.segs){
+    pline(s[0],s[1],s[2],s[3],c);
+    if(a>.65)pline(s[0]+1,s[1],s[2]+1,s[3],'#b8c8f8');
+  }
+  for(const sub of bolt.br)for(const s of sub)pline(s[0],s[1],s[2],s[3],c);
+}
+function snapWeather(){
+  wxT=cl(silk*.70+cl(outFlow*.30,0,.30)+(dead?.30:0),0,1);
+  wx=wxT;
+  skyKey=-1;
+  mkBgTile();mkFgTile();
+  const R=skyRamp(wx);
+  for(const c of clouds)cloudTile(c,R,wx);
+}
+function updWeather(dt){
+  wxT=cl(silk*.70+cl(outFlow*.30,0,.30)+(dead?.30:0),0,1);
+  wx=lerp(wx,wxT,cl(.010*dt,0,1));
+  const wb=Math.round(wx*12);
+  if(wb!==skyKey){
+    skyKey=wb;mkBgTile();mkFgTile();
+    const R=skyRamp(wx);
+    for(const c of clouds)cloudTile(c,R,wx);
+  }
+  windPh+=dt*.02;
+  const gust=1+Math.sin(windPh)*.4+Math.sin(windPh*2.7)*.2;
+  for(const c of clouds){
+    c.x+=c.sp*(1+wx*1.8)*gust*dt;
+    if(c.t&&c.x>RW+c.t.w){c.x=-c.t.w;}
+  }
+  const ra=cl((wx-.46)/.42,0,1);
+  if(ra>0){
+    const sl=1.6+wx*1.4;
+    for(const p of rainF){
+      p.y+=p.v*(1.2+wx*1.4)*dt;p.x+=sl*.5*dt;
+      if(p.y>RH+4||p.x>RW+6){p.y=-6-Math.random()*20;p.x=Math.random()*RW-10;}}
+    for(const p of rainN){
+      p.y+=p.v*(1.4+wx*1.6)*dt;p.x+=sl*.7*dt;
+      if(p.y>RH+4||p.x>RW+6){p.y=-6-Math.random()*20;p.x=Math.random()*RW-10;}}
+  }
+  for(const b of birds){b.x+=b.sp*dt;if(b.x>RW+8)b.x=-8;}
+  if(wx>.62){
+    boltT-=dt;
+    if(boltT<0){
+      boltT=(150+Math.random()*460)*(1.25-wx);
+      bolt=mkBolt();flash=1;
+      thQ=6+Math.random()*26;
+      SPOKE[(Math.random()*WEB.spokes)|0].vib=Math.min(1,.4);
+    }
+  }
+  flash*=Math.pow(.80,dt);
+  if(bolt){bolt.life+=dt;if(bolt.life>7)bolt=null;}
+  if(thQ>0){thQ-=dt;if(thQ<=0)thunder(wx);}
+  if(MUS){
+    const now=AC.currentTime;
+    MUS.rg&&MUS.rg.gain.setTargetAtTime(sndOn?ra*.13:0,now,.7);
+    MUS.rf&&MUS.rf.frequency.setTargetAtTime(900+ra*2600,now,.8);
+    MUS.wg&&MUS.wg.gain.setTargetAtTime(sndOn?(.02+wx*.07)*(1+Math.sin(windPh)*.4):0,now,1.1);
+    MUS.wf&&MUS.wf.frequency.setTargetAtTime(280+wx*420+Math.sin(windPh*1.7)*120,now,1.0);
+  }
+}
+function drawRain(arr,c){
+  const ra=cl((wx-.46)/.42,0,1);
+  if(ra<=.02)return;
+  const n=Math.round(arr.length*ra);
+  const sl=Math.round(1+wx*1.6);
+  for(let i=0;i<n;i++){
+    const p=arr[i];
+    pline(p.x,p.y,p.x-sl,p.y+p.len,c);
+  }
+}
+function drawBack(){
+  if(bgTile)blit(bgTile,0,0);
+  const bA=cl(1-wx*2.6,0,1);
+  if(bA>.15)for(const b of birds){
+    const f=Math.sin(T*.06+b.ph)>0?1:0;
+    const x=Math.round(b.x),y=Math.round(b.y);
+    const c=mixc('#40506c','#8a96b0',bA);
+    ps(x,y,c);ps(x-2,y-1+f,c);ps(x+2,y-1+f,c);
+    ps(x-3,y-1+f*2,c);ps(x+3,y-1+f*2,c);
+  }
+  for(const c of clouds){
+    if(!c.t)continue;
+    blit(c.t.fb,Math.round(c.x),Math.round(c.y));
+    if(c.x>RW-c.t.w)blit(c.t.fb,Math.round(c.x-RW-c.t.w),Math.round(c.y));
+  }
+  drawRain(rainF,mixc('#9fb4d8','#5a6c90',cl(wx,0,1)));
+  if(fgTile)blit(fgTile,0,0);
+}
+function drawWeatherFront(){
+  drawRain(rainN,'#d0dcf4');
+  drawBolt();
+  if(flash>.03)pwash('#e8f0ff',flash*.55);
+}
+
+function mkWebTile(){
+  webTile=mkFB(RW,RH);
+  const sv=fbPush(webTile);
+  const sc=C.sk2,sc2=C.sk1;
+  for(let j=1;j<=WEB.rings;j++){
+    const t=j/WEB.rings;
+    for(let i=0;i<WEB.spokes;i++){
+      const a=spokeStatic(i,t),b=spokeStatic((i+1)%WEB.spokes,t);
+      const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
+      const cx2=WEB.cx+(mx-WEB.cx)*.90,cy2=WEB.cy+(my-WEB.cy)*.90;
+      pline(a[0],a[1],cx2,cy2,j%2?sc:sc2);
+      pline(cx2,cy2,b[0],b[1],j%2?sc:sc2);
+    }
+  }
+  for(let i=0;i<WEB.spokes;i++){
+    const e=spokeStatic(i,1);
+    pline(WEB.cx,WEB.cy,e[0],e[1],sc2);
+    ps(Math.round(e[0]),Math.round(e[1]),C.sk1);
+  }
+  const dwr=rnd(313);
+  for(let i=0;i<16;i++){
+    const si=(dwr()*WEB.spokes)|0,t=.25+dwr()*.7;
+    const p=spokeStatic(si,t);
+    ps(Math.round(p[0]),Math.round(p[1]),C.sk0);}
+  fbPop(sv);fbIndex(webTile);
+}
+function drawWeb(){
+  if(webTile)blit(webTile,0,0);
+  // We only redraw the most strongly vibrating spokes: with a full
+  // web of spiders that is the difference between six lines and all
+  // twelve with rings.
+  let vibN=0;
+  for(let i=0;i<WEB.spokes;i++){
+    const v=SPOKE[i].vib;
+    if(v<=.20)continue;
+    if(++vibN>6)break;
+    const e=spokePt(i,1);
+    pline(WEB.cx,WEB.cy,e[0],e[1],C.sk0);
+    const m=spokePt(i,.62);
+    ps(Math.round(m[0]),Math.round(m[1]),C.sk0);
+    if(v>.46){
+      const t=4/WEB.rings;
+      const a=spokePt(i,t),b=spokePt((i+1)%WEB.spokes,t);
+      pline(a[0],a[1],b[0],b[1],C.sk1);
+      const c2=spokePt((i-1+WEB.spokes)%WEB.spokes,t);
+      pline(c2[0],c2[1],a[0],a[1],C.sk1);
+    }
+  }
+}
+const STILE={};
+function spiderTile(rq,ph,big){
+  const k=rq+'|'+ph+'|'+(big?1:0);
+  if(STILE[k])return STILE[k];
+  const R=rq,pad=Math.ceil(R*2.7)+3,S=pad*2;
+  const fb=mkFB(S,S);
+  const sv=fbPush(fb);
+  const x=pad,y=pad;
+  const wob=Math.sin(ph/8*6.28319)*.5;
+  for(let i=0;i<8;i++){
+    const side=i<4?-1:1,kk=i%4;
+    const a=side*(.5+kk*.45)+wob*(kk%2?.3:-.3);
+    const L=R*(1.9+kk*.30);
+    const mx=x+Math.cos(a)*L*.55,my=y+Math.sin(a)*L*.45-R*.3;
+    pline(x,y,mx,my,C.sp2);
+    pline(mx,my,x+Math.cos(a)*L,y+Math.sin(a)*L*.7+R*.2,C.sp1);
+  }
+  pdisc(x,y,R,R*.86,C.sp1);
+  pdisc(x+R*.28,y+R*.24,R*.7,R*.6,C.sp2);
+  pdisc(x-R*.3,y-R*.3,R*.3,R*.26,C.sp0);
+  if(big){ps(x,y,C.sr1);ps(x-1,y+1,C.sr1);ps(x+1,y+1,C.sr1);}
+  pring(x,y,R,R*.86,C.sp3);
+  pdisc(x,y-R*.9,R*.5,R*.42,C.sp2);
+  ps(Math.round(x-R*.24),Math.round(y-R*.95),C.sr0);
+  ps(Math.round(x+R*.24),Math.round(y-R*.95),C.sr0);
+  fbPop(sv);fbIndex(fb);
+  STILE[k]={fb,pad};return STILE[k];
+}
+function drawSpider(s){
+  const p=spokePt(s.spoke,sT(s));
+  const x=Math.round(p[0]),y=Math.round(p[1]);
+  const R=Math.max(3.2,3.4+s.size*2.2);
+  const dy=s.dying?s.dying:0;
+  if(dy>0){
+    for(let i=0;i<5;i++){
+      const a=i*1.26+dy*3;
+      ps(Math.round(x+Math.cos(a)*R*(1+dy*3)),Math.round(y+Math.sin(a)*R*(1+dy*3)),C.sr1);}
+    return;}
+  const rq=Math.max(2,Math.round(R*2)/2);
+  const ph=((s.step*2.4+s.wob)/6.28319*8|0)&7;
+  const t=spiderTile(rq,ph,s.size>1.2);
+  blit(t.fb,x-t.pad,y-t.pad);
+  const sv=p[1]<FLY.y?1:-1;
+  if(s.size>1.6){
+    const w=numW(s.hp.toFixed(1));
+    pr(x-((w/2)|0)-1,y+sv*(R+7),w+2,7,C.ink);
+    pnum(s.hp.toFixed(1),x-((w/2)|0),y+sv*(R+7)+1,C.sr0);}
+}
+const SHTILE={};
+function shotTile(rq){
+  if(SHTILE[rq])return SHTILE[rq];
+  const R=rq,pad=Math.ceil(R)+2,Sz=pad*2;
+  const fb=mkFB(Sz,Sz);
+  const sv=fbPush(fb);
+  pdisc(pad,pad,R,R,C.g0);
+  pdisc(pad,pad,R*.5,R*.5,C.wht);
+  pring(pad,pad,R+1,R+1,C.g2);
+  fbPop(sv);fbIndex(fb);
+  SHTILE[rq]={fb,pad};return SHTILE[rq];
+}
+function drawShot(sh){
+  const x=Math.round(sX(sh)),y=Math.round(sY(sh));
+  const R=Math.max(1.5,1.4+sh.size*.9);
+  const v2=sh.vx*sh.vx+sh.vy*sh.vy;
+  if(v2>0.6){
+    // a tail only on a shot flying at a target
+    for(let i=1;i<=4;i++)
+      ps(Math.round(x-sh.vx*i*1.6),Math.round(y-sh.vy*i*1.6),i<2?C.g0:C.g2);
+  }
+  const t=shotTile(Math.max(2,Math.round(R*2)/2));
+  blit(t.fb,x-t.pad,y-t.pad);
+}
+function drawLegs(){
+  for(const l of legs){
+    const a=1-l.life/l.max;
+    if(a<=0)continue;
+    const x=Math.round(l.x),y=Math.round(l.y);
+    const dx=Math.cos(l.rot)*l.len,dy=Math.sin(l.rot)*l.len;
+    pline(x-dx,y-dy,x+dx,y+dy,a>.4?C.sp1:C.sp2);
+    ps(x,y,C.sp0);
+  }
+}
+function drawFx(){
+  for(const f of fx){
+    const a=1-f.life/f.max;
+    if(a<=0)continue;
+    const x=Math.round(f.x),y=Math.round(f.y);
+    if(f.kind==='heart'){
+      pr(x-2,y-2,2,2,C.sr0);pr(x+1,y-2,2,2,C.sr0);
+      pr(x-2,y,5,1,C.sr0);pr(x-1,y+1,3,1,C.sr0);ps(x,y+2,C.sr0);
+    }else if(f.kind==='spark'){
+      ps(x,y,C.wht);ps(x-1,y,C.g0);ps(x+1,y,C.g0);ps(x,y-1,C.y0);
+    }else if(f.kind==='splat'){
+      pr(x,y,2,2,C.sr1);ps(x+2,y+1,C.sr0);
+    }else if(f.kind==='bite'){
+      pr(x-1,y-1,3,3,C.sr0);ps(x,y-3,C.sr1);ps(x+3,y,C.sr1);
+    }else if(f.kind==='sweat'){
+      pr(x,y-2,1,2,C.sky);pr(x-1,y,3,2,C.sky);ps(x,y-2,C.wht);
+    }else if(f.kind==='tear'){
+      pr(x,y-1,1,2,C.sky);ps(x,y+1,C.gy0);
+    }else if(f.kind==='silkpuff'){
+      ps(x,y,C.sk0);ps(x-2,y+1,C.sk1);ps(x+2,y-1,C.sk1);
+    }
+  }
+}
+function drawFly(){
+  const d=DNA,f=FLY.f,S=shadeSet(d.hue,d.sat*(1-silk*.3),d.lig*(1-silk*.25));
+  const tr=FLY.tremble*2.4+f.struggle*1.4;
+  const cx=Math.round(FLY.x)+jit(tr,0);
+  const cy=Math.round(FLY.y)+3+jit(tr,3);
+  const st=moodOf()[2];
+  const stg=silkStage(silk)[0];
+  const K=1.75;
+
+  if(dead&&cocoonT>.3){
+    const R=Math.round(18+cocoonT*8);
+    pdisc(cx,cy,R*.70,R,C.sk2);
+    pdisc(cx,cy,R*.60,R*.9,C.sk1);
+    for(let i=0;i<18;i++){
+      const yy=cy-R+(i/18)*R*2;
+      const w=R*.70*Math.sqrt(Math.max(0,1-Math.pow((yy-cy)/R,2)));
+      pline(cx-w,yy,cx+w,yy+2,i%2?C.sk0:C.sk2);}
+    pring(cx,cy,R*.70,R,C.sk3);
+    if(cocoonT>.75){
+      pr(cx-3,cy-4,3,1,C.gy3);pr(cx+1,cy-4,3,1,C.gy3);
+      pr(cx-2,cy+2,5,1,C.gy3);}
+    return;
+  }
+
+  const hy=Math.round(cy-9*K/1.75);
+  const wingA=Math.sin(FLY.wingPh)*(.30+f.flutter*.75);
+  const wl=Math.round(19*d.wing*(1-stg*.06));
+  if(stg<3){
+    for(const s of[-1,1]){
+      const lift=Math.round(wingA*s*3);
+      const bx=cx+s*3,by=cy-4;
+      const tx2=cx+s*wl,ty2=cy-9+lift;
+      const pts=[[bx,by-1],[tx2,ty2],[tx2+s*2,ty2+6],[bx+s*1,by+5]];
+      ppoly(pts,hsl(d.wingTint,28,silk>.5?34:46));
+      pdithPolyLocal(pts,hsl(d.wingTint,44,76),2,s>0?0:1);
+      pline(bx,by-1,tx2,ty2,C.sk1);
+      pline(bx+s*1,by+5,tx2+s*2,ty2+6,hsl(d.wingTint,28,38));
+    }
+  }
+
+  const abL=Math.round(16*d.abLen*(1-f.curl*.26));
+  const abCurl=Math.round(f.curl*6);
+  for(let i=0;i<abL;i++){
+    const t=i/abL;
+    const w=Math.max(1,Math.round(6.2*Math.sin(Math.PI*(.30+t*.62))+.8));
+    const yy=cy+5+i;
+    const xx=cx+Math.round(abCurl*t*t);
+    const bandi=Math.floor(t*(d.stripes+1.2));
+    pr(xx-w,yy,w*2,1,bandi%2?S.dk:S.ba);
+    if(bandi%2===0)ps(xx-w+1,yy,S.li);
+    if(i===abL-1||i===abL-2)pr(xx-w,yy,w*2,1,S.dk);
+  }
+  pring(cx+abCurl*.3,cy+5+abL*.5,4.6,abL*.55,S.dk);
+  if(d.rare==='gilded')for(let i=1;i<abL;i+=4)
+    ps(cx-2+Math.round(abCurl*Math.pow(i/abL,2)),cy+5+i,C.y1);
+
+  const strug=f.struggle;
+  for(let i=0;i<6;i++){
+    const side=i<3?-1:1,k=i%3;
+    const ph=FLY.ph*2.4+i*1.1;
+    const amp=(stg>=1?.22:1)*strug;
+    const a=side*(.50+k*.44)+Math.sin(ph)*.34*amp;
+    const L=10+k*2.6;
+    const mx=cx+Math.cos(a)*L*.60,my=cy+3+Math.sin(a)*L*.52;
+    pline(cx+side*4,cy+1+k*2,mx,my,S.dk);
+    pline(mx,my,cx+Math.cos(a)*L,cy+4+Math.sin(a)*L*.86,S.sh);
+    ps(Math.round(cx+Math.cos(a)*L),Math.round(cy+4+Math.sin(a)*L*.86),S.dk);
+  }
+
+  pdisc(cx,cy,7.2,5.8,S.ba);
+  pdisc(cx+1.8,cy+1.6,5.8,4.4,S.sh);
+  pdisc(cx-2.2,cy-2.2,3.0,2.2,S.li);
+  pring(cx,cy,7.2,5.8,S.dk);
+  if(d.bristle)for(let i=-3;i<=3;i++)
+    if(i%2===0)ps(cx+i*2,cy-6,S.dk);
+
+  pdisc(cx,hy,5.6,4.6,S.sh);
+  pdisc(cx,hy+1,4.8,3.6,S.ba);
+  pring(cx,hy,5.6,4.6,S.dk);
+
+  const ER=Math.max(2.4,3.4*d.eyeBig);
+  const blinkK=cl(1-Math.abs(FLY.blink-.5)*2,0,1);
+  const eo=Math.max(.20,1-blinkK*.82);
+  for(const s of[-1,1]){
+    const ex=cx+s*3.5,ey=hy-1.2;
+    pdisc(ex,ey,ER,ER*eo,hsl(d.eyeHue,d.eyeSat,silk>.6?32:44));
+    pdith(Math.round(ex-ER),Math.round(ey-ER*eo),
+      Math.max(2,Math.round(ER*2)),Math.max(2,Math.round(ER*2*eo)),
+      hsl(d.eyeHue,d.eyeSat+6,silk>.6?46:62),2,s>0?0:1);
+    if(eo>.5){
+      const gx=Math.round(ex-ER*.38+FLY.sac*ER*.34);
+      const gy=Math.round(ey-ER*.42);
+      const gs=f.glint;
+      if(gs>.95){pr(gx-1,gy,3,2,C.wht);pr(gx,gy-1,1,1,C.wht);}
+      else if(gs>.6){pr(gx,gy,2,2,C.wht);}
+      else if(gs>.3){ps(gx,gy,C.wht);}
+      else if(gs>.1){ps(gx,gy,C.gy0);}
+      if(f.bright>.7)ps(Math.round(ex+ER*.45),Math.round(ey+ER*.32),C.wht);
+    }
+    pring(ex,ey,ER,Math.max(1,ER*eo),hsl(d.eyeHue,d.eyeSat+14,16));
+  }
+
+  const an=f.anten,anL=Math.round(6*d.anten);
+  for(const s of[-1,1]){
+    const tw=(s<0?FLY.antL:FLY.antR);
+    const a=-1.57+s*(.48-an*.52)+tw*.32;
+    const ex=cx+s*1.8,ey=hy-3.6;
+    const mx=ex+Math.cos(a)*anL*.6,my=ey+Math.sin(a)*anL*.6;
+    const tx2=ex+Math.cos(a)*anL,ty2=ey+Math.sin(a)*anL;
+    pline(ex,ey,mx,my,S.dk);
+    pline(mx,my,tx2,ty2,S.sh);
+    if(d.bristle){
+      ps(Math.round(tx2),Math.round(ty2),C.gy0);
+      ps(Math.round(tx2)+s,Math.round(ty2)-1,C.gy1);
+    }else pr(Math.round(tx2)-1,Math.round(ty2)-1,2,2,S.dk);
+  }
+
+  if(f.prob>.14){
+    const pl=Math.round(1+f.prob*4);
+    pr(cx-1,hy+4,2,pl,C.ey2);
+    pr(cx-1,hy+4+pl,2,1,C.ey1);}
+  if(st==='enraged')for(let i=0;i<3;i++){
+    ps(cx-10-i,hy-7+i*2,C.sr0);ps(cx+10+i,hy-7+i*2,C.sr0);}
+  if(st==='terrified'&&Math.sin(T*.3)>0){
+    pr(cx-12,hy-5,2,1,C.sky);pr(cx+11,hy-5,2,1,C.sky);}
+
+  if(stg>=1)drawSilk(cx,cy,hy,stg,wl);
+}
+const SKTILE={};
+function silkTile(stg,wl){
+  const k=stg+'|'+wl;
+  if(SKTILE[k])return SKTILE[k];
+  const PW=Math.max(28,wl*2+8),PH=64;
+  const fb=mkFB(PW,PH);
+  const sv=fbPush(fb);
+  const cx=(PW/2)|0,cy=34,hy=cy-9;
+  if(stg>=1){
+    for(let i=0;i<4;i++){
+      const yy=cy+8+i*4;
+      pline(cx-11,yy,cx+11,yy+1,i%2?C.sk1:C.sk2);}
+  }
+  if(stg>=2){
+    for(const s of[-1,1])for(let i=0;i<3;i++)
+      pline(cx+s*3,cy-6+i*3,cx+s*(wl-2),cy-6+i*5,i%2?C.sk0:C.sk1);
+  }
+  if(stg>=3){
+    for(let i=0;i<5;i++){
+      const yy=cy-5+i*3;
+      pline(cx-9,yy,cx+9,yy-1,i%2?C.sk0:C.sk1);}
+    pdith(cx-9,cy-6,18,13,C.sk1,3,0);
+  }
+  if(stg>=4){
+    for(let i=0;i<4;i++)pline(cx-8,hy-4+i*3,cx+8,hy-5+i*3,C.sk0);
+    pdith(cx-8,hy-5,16,12,C.sk1,3,1);
+    pdisc(cx,cy+1,10,15,C.sk2);
+    pdith(cx-10,cy-14,20,30,C.sk0,3,0);
+  }
+  fbPop(sv);fbIndex(fb);
+  SKTILE[k]={fb,ox:cx,oy:cy};
+  return SKTILE[k];
+}
+function drawSilk(cx,cy,hy,stg,wl){
+  const t=silkTile(stg,wl);
+  blit(t.fb,cx-t.ox,cy-t.oy);
+}
+
+
+function drawVig(){
+  if(silk>.25)pwash(C.n5,(silk-.25)*.16);
+  if(flashT>.02)pwash(flashCol,flashT*.42);
+}
+
+
+let lastMood='',lastStage=-1;
+const MOODHZ={calm:392,hopeful:523,euphoric:784,enraged:294,frantic:659,
+  terrified:880,exhausted:262,resigned:196,dead:147};
+/* Measurement overlay. Enable with ?perf=1 - needed to measure on
+   a live phone without a console attached: shows frame time,
+   FPS, entity count and memory used where the browser
+   exposes it. */
+let PERF=null;
+try{PERF=new URLSearchParams(location.search).get('perf')?
+  {t:[],n:0,el:null,mem:0}:null;}catch(e){}
+function perfTick(ms){
+  if(!PERF)return;
+  PERF.t.push(ms);
+  if(PERF.t.length>120)PERF.t.shift();
+  if(++PERF.n%20)return;
+  if(!PERF.el){
+    PERF.el=document.createElement('div');
+    PERF.el.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99;'
+      +'font:11px/1.35 ui-monospace,monospace;color:#8cf0cc;'
+      +'background:rgba(10,6,18,.82);padding:6px 8px;border-radius:4px;'
+      +'white-space:pre;pointer-events:none';
+    document.body.appendChild(PERF.el);
+  }
+  const a=PERF.t.slice().sort((x,y)=>x-y);
+  const p=(q)=>a[Math.min(a.length-1,Math.floor(a.length*q))]||0;
+  const avg=a.reduce((s,v)=>s+v,0)/Math.max(1,a.length);
+  let mem='';
+  try{if(performance.memory)
+    mem='\nheap '+(performance.memory.usedJSHeapSize/1048576).toFixed(1)+' MB';}catch(e){}
+  PERF.el.textContent=
+    'frame '+avg.toFixed(2)+' ms  p95 '+p(.95).toFixed(2)
+    +'\nfps  '+(1000/Math.max(0.01,avg)).toFixed(0)
+    +'\nspiders '+S.spiders.length+'  shots '+S.shots.length
+    +'\nsilk '+S.silk.toFixed(3)+'  step '+S.step
+    +mem;
+}
+function ui(){
+  const m=moodOf();
+  if(m[2]!==lastMood){
+    const N=DNA.base;
+    const md={
+      calm:'Web is quiet. '+N+' holds still and conserves.',
+      hopeful:'Buys outpacing sells - wings loosen, antennae come up.',
+      euphoric:'Buy wall. Eyes blazing, wings at full beat, proboscis out.',
+      enraged:'Both sides slugging it out - '+N+' thrashes at the strands.',
+      frantic:'Something is on the web. Wings hammering, legs everywhere.',
+      terrified:'A spider is right on her. Eye glint down to a pinpoint.',
+      exhausted:'Too much silk. Wings barely move, antennae drooping.',
+      resigned:'She has stopped fighting. Nearly still.',
+      dead:'Fully wrapped. Recorded on-chain.'};
+    if(md[m[2]]){log('Mood: '+m[0],md[m[2]],m[1]);
+      if(sndOn)tone(MOODHZ[m[2]]||440,.07,'triangle',.12);}
+    lastMood=m[2];}
+  document.getElementById('moodTxt').textContent=m[0];
+  document.getElementById('moodTxt').style.color=m[1];
+  const sg=silkStage(silk);
+  if(sg[0]!==lastStage){
+    if(lastStage>=0){
+      const N=DNA.base;
+      const sd=['The strands slacken - '+N+' is loose again.',
+        'Silk builds on the legs. Struggling gets harder.',
+        'Wings are pinned. She cannot beat them properly any more.',
+        'Thorax wrapped. Movement is almost gone.',
+        'Silk over the head. One more wrap and it is over.',
+        'Cocooned.'][sg[0]];
+      log('Silk: '+sg[1],sd+' MC/ATH at '+Math.round(mc/ath*100)+'%.',sg[2]);
+      SFX.silk();}
+    lastStage=sg[0];}
+  document.getElementById('stageTxt').textContent=sg[1];
+  document.getElementById('stageTxt').style.color=sg[2];
+  const alive=spiders.filter(s=>!s.dying).length;
+  document.getElementById('spidTxt').textContent=alive+' spider'+(alive===1?'':'s');
+  document.getElementById('spidTxt').style.color=alive?C.sr1:C.gy1;
+  const sb=document.getElementById('sbar');
+  sb.style.width=cl(silk*100,0,100).toFixed(0)+'%';
+  sb.style.background=silk>.8?C.sr1:(silk>.5?C.y1:C.sk1);
+  document.getElementById('sval').textContent=Math.round(silk*100)+'%';
+  const rt=cl(mc/Math.max(1,ath),0,1);
+  const mb=document.getElementById('mbar');
+  mb.style.width=(rt*100).toFixed(0)+'%';
+  mb.style.background=rt<.3?C.sr1:(rt<.6?C.y1:C.g1);
+  document.getElementById('mval').textContent=Math.round(rt*100)+'%';
+  document.getElementById('mc').textContent=
+    mc>=1?mc.toFixed(3):(mc>0?mc.toExponential(2):'--');
+  const dd=ath>0?cl(1-mc/ath,0,1):0;
+  const ae=document.getElementById('ath');
+  ae.textContent=(dd*100).toFixed(1)+'%';
+  ae.style.color=dd>.6?C.sr1:(dd>.3?C.y1:C.g1);
+  document.getElementById('killv').textContent=kills;
+  document.getElementById('bitev').textContent=bites;
+  const now=performance.now();
+  while(txTimes.length&&now-txTimes[0]>60000)txTimes.shift();
+  document.getElementById('txr').textContent=txTimes.length;
+  const sy=document.getElementById('syncTxt');
+  // SYNC means "everyone sees the same thing" - true only with the collector.
+  // In solo the hash belongs to this viewer only, and the label says so.
+  // SIM - simulation without a market: so that a "SYNC" screenshot of invented
+  // data does not look like proof of on-chain state.
+  const tag=FEEDCFG.mode==='demo'?'SIM ':(FEEDCFG.mode==='provider'&&!FEED.shared?'LOCAL ':'SYNC ');
+  sy.textContent=tag+S.ckHash+' @'+S.ckStep.toLocaleString('en-US');
+  sy.style.color=(FEEDCFG.mode==='demo'||FEED.shared)?C.g1:C.y1;
+  const cae=document.getElementById('ca');
+  if(cae&&FEED.pool&&cae.dataset.set!=='1'){
+    cae.dataset.set='1';cae.textContent=FEED.pool;
+    cae.onclick=()=>{
+      try{navigator.clipboard.writeText(FEED.pool);
+        log('COPIED','Contract address copied to clipboard.',C.g1);}catch(e){}
+    };
+  }
+  const hh=FEED.health(),de=document.getElementById('feedBadge');
+  if(de){
+    de.textContent=hh.txt;
+    de.style.background=
+      hh.s==='live'?C.g1:(hh.s==='demo'?C.y1:(hh.s==='init'?C.sky:C.sr1));
+    de.style.color=C.ink;
+  }
+  const wv=document.getElementById('webv');
+  wv.textContent=webBuzz>.5?'shaking':(webBuzz>.15?'trembling':'calm');
+  wv.style.color=webBuzz>.5?C.sr1:(webBuzz>.15?C.y1:C.gy1);
+  document.getElementById('gnum').innerHTML='Gen #'+gen+' &middot; age '+
+    fmtAge(S.step-S.genStep)+' &middot; step '+S.step.toLocaleString('en-US');
+  const lv=document.getElementById('live');
+  lv.textContent=dead?'COCOONED':'ALIVE';
+  lv.className='tick'+(dead?' warn':'');
+}
+CVE.addEventListener('click',()=>{if(AC&&AC.state==='suspended')AC.resume();});
+
+/* ── render reactions to simulation events ──────────────────
+   The simulation draws nothing and plays no sound. It only puts
+   events into OUTQ, and the renderer plays them out. During history
+   catch-up the queue is simply dropped.
+   ──────────────────────────────────────────────────────────── */
+function drainOUT(silent){
+  if(OUTDROP>0&&!silent){
+    const n=OUTDROP;OUTDROP=0;
+    log('BURST',n+' event'+(n>1?'s':'')+' happened faster than they could be '
+      +'shown. Counters in the header are still exact.',C.gy1);
+  }else if(silent)OUTDROP=0;
+  while(OUTQ.length){
+    const e=OUTQ.shift();
+    if(silent)continue;
+    switch(e.t){
+      case 'buy':
+        txTimes.push(performance.now());
+        e.size>1.6?SFX.whaleBuy():SFX.buy();
+        log('Buy '+e.sol.toFixed(2)+' SOL',
+          (e.size>1.6?'Whale entry. ':'')+e.n+' shot'+(e.n>1?'s':'')+
+          ' launched at the web.',C.g1);
+        break;
+      case 'sell':
+        txTimes.push(performance.now());
+        e.size>1.6?SFX.whaleSell():SFX.sell();
+        log('Sell '+e.sol.toFixed(2)+' SOL',
+          (e.size>1.6?'Heavy dump. ':'')+'A '+(e.size>1.6?'large':'small')+
+          ' spider drops onto spoke '+e.spoke+' and starts crawling in.',C.sr1);
+        break;
+      case 'spawn':
+        SPOKE[e.spoke].vib=Math.min(1,SPOKE[e.spoke].vib+.6);
+        webBuzz=Math.min(1,webBuzz+.45);SFX.spawn();
+        break;
+      case 'shot': SFX.shot(); break;
+      case 'hit':  SFX.shot(); break;
+      case 'spark': addFx('spark',4,e.x,e.y); break;
+      case 'crawl':
+        pluck(120+e.spoke*11+(1-e.t)*90,.045+e.size*.02);
+        SPOKE[e.spoke].vib=Math.min(1,SPOKE[e.spoke].vib+.10);
+        break;
+      case 'kill':
+        SPOKE[e.spoke].vib=Math.min(1,SPOKE[e.spoke].vib+.5);
+        if(legs.length>LEGS_CAP-8)legs.splice(0,legs.length-(LEGS_CAP-8));
+        for(let k=0;k<8;k++)legs.push({x:e.x,y:e.y,
+          vx:(Math.random()-.5)*2.2,vy:-.6-Math.random()*1.4,
+          rot:Math.random()*6,vr:(Math.random()-.5)*.4,
+          len:2+e.size,life:0,max:70+Math.random()*40});
+        addFx('splat',6,e.x,e.y);
+        flashT=.7;flashCol=C.g0;SFX.kill();
+        log('Spider down','Shot connected. The '+(e.size>1.6?'big one':'spider')+
+          ' comes apart on spoke '+e.spoke+'. Legs everywhere. '+
+          e.kills+' saves total.',C.g1);
+        break;
+      case 'bite':
+        FLY.tremble=1;FLY.blink=1;
+        shake=Math.min(7,shake+e.size*1.8);
+        flashT=1;flashCol=C.sr0;
+        addFx('bite',5,FLY.x,FLY.y);SFX.bite();
+        log('BITTEN',DNA.base+' takes a bite. Silk debt now '+
+          Math.round(e.debt*100)+'% on top of the price drawdown. '+
+          silkStage(silk)[1]+'.',C.sr0);
+        break;
+      case 'ath':
+        chime();
+        log('New ATH','Price high reset. The strands slacken and '+
+          DNA.base+' gets room to move.',C.g0);
+        break;
+      case 'merge':
+        SPOKE[(Math.random()*WEB.spokes)|0].vib=.5;
+        SFX.spawn();
+        break;
+      case 'death': {
+        SFX.die();
+        setTimeout(()=>refreshNecro(null),4000);
+        const d0=e.seed!==undefined?mkDNA(e.seed):DNA;
+        log(d0.name+' cocooned',
+          d0.title+' '+d0.name+' is fully wrapped after '+fmtAge(e.ageSteps)+
+          '. Saved '+e.kills+' times, bitten '+e.bites+
+          '. Generation '+e.gen+' over.',C.sr1);
+        break; }
+      case 'reanchor':
+        applyGen();hatching=1;snapWeather();
+        log('EPOCH '+e.now,'Crossed an epoch boundary (was '+e.was+
+          '). State re-anchored so every client stays identical. '+
+          'Real checkpoints will remove this reset.',C.y1);
+        break;
+      case 'hatch':
+        applyGen(e.seed);SFX.hatch();
+        log(DNA.name+' hatched',
+          fullName()+' emerges from the old cocoon. Gen #'+e.gen+
+          ', seed '+e.seed.toString(16)+'. Morph: '+DNA.morph+', '+
+          DNA.eyeName+' eyes'+(DNA.rare?', rare '+DNA.rare:'')+'.',C.sky);
+        break;
+    }
+  }
+}
+function fmtAge(steps){
+  const m=Math.floor(steps*SIMC.STEP_MS/60000);
+  if(m<60)return m+'m';
+  const hh=Math.floor(m/60);
+  return hh<24?(hh+'h '+(m%60)+'m'):(Math.floor(hh/24)+'d '+(hh%24)+'h');
+}
+function syncAliases(){
+  gen=S.gen;mc=S.px;ath=S.pxAth;silk=S.silk;
+  inFlow=S.inFlow;outFlow=S.outFlow;
+  kills=S.kills;bites=S.bites;
+  spiders=S.spiders;
+  shots=S.shots.filter(s=>s.pend===undefined);
+  if(S.dead!==dead){dead=S.dead;if(dead){deadT=0;cocoonT=0;}}
+  if(dead){deadT++;cocoonT=Math.min(1,cocoonT+.008);}
+  born=S.genStep;
+}
+
+initWeb();mkWebTile();initWeather();updWeather(1);skyKey=-1;updWeather(1);
+let booting=false;
+async function startup(){
+await loadCfgFile();
+if(FEED_CFG_SRC.length&&typeof console!=='undefined')
+  console.log('[savefly] config: '+FEED_CFG_SRC.join(', '));
+if(FEEDCFG.mode==='provider'&&!FEEDCFG.allowSolo){
+  // provider gives no shared state: a 300-trade window does not allow
+  // replaying a shared history, each client has its own picture.
+  // So this mode does not reach prod by accident, it requires a flag.
+  console.warn('[savefly] provider mode gives no shared state; '
+    +'FEEDCFG.allowSolo=true is required. Feed not connected.');
+  FEEDCFG.mode='demo';
+}
+/* Unfilled config template. We show this plainly instead of running
+   a simulation disguised as a live token. */
+const CFG_PLACEHOLDER=/PASTE|YOUR_|TOKEN_MINT|^\s*$/i;
+if(FEEDCFG.mode==='provider'&&!FEEDCFG.pool&&CFG_PLACEHOLDER.test(String(FEEDCFG.mint||''))){
+  FEED.notConfigured=true;FEEDCFG.mode='demo';
+}
+if(FEEDCFG.mode==='csv'||(FEEDCFG.mode==='provider'&&(FEEDCFG.pool||FEEDCFG.mint))){
+  const wantMode=FEEDCFG.mode;
+  booting=true;
+  simBoot();applyGen();
+  bootLive().then(ok=>{booting=false;
+    if(ok){FEED.waiting=false;applyGen();return;}
+    /* The feed is not available yet. On launch day this is normal: the aggregator
+       indexes a new pool in about 4 minutes (measured). Previously
+       the game fell back to simulation here forever until a manual
+       reload - so anyone who opened the page in the first
+       minutes would see invented activity. Now we say we are waiting,
+       and retry on our own. A reload rather than a background retry:
+       bootLive changes global state, and a clean start is more reliable. */
+    FEED.waiting=true;FEEDCFG.mode='demo';simBoot();applyGen();
+    log('FEED NOT READY',wantMode==='provider'
+      ?'The market feed has no data for this token yet. New pools take a few minutes to be indexed. Retrying automatically.'
+      :'The trade log is not reachable yet. Retrying automatically.',C.y1);
+    setTimeout(()=>{try{if(typeof location!=='undefined'&&typeof location.reload==='function')location.reload();}catch(e){}},45000);
+  });
+}else{
+  FEEDCFG.mode='demo';
+  simBoot();applyGen();
+}
+  // these values depend on state, so they are set here, not at
+  // module level: S is created in startup()
+  last=performance.now();lastGen=S.gen;lastSeed=S.seed;
+}
+let last=0,acc=0,lastGen=1,lastSeed=0;
+
+let loopErrs=0;
+function loop(now){
+  try{frame(now);}
+  catch(e){
+    // A single exception in a frame must not freeze the screen forever.
+    // Log the first few and carry on: the simulation is deterministic,
+    // the next frame will most likely pass.
+    if(++loopErrs<=3){
+      try{log('RENDER ERROR',String(e&&e.message||e).slice(0,160),C.sr0);}catch(_){}
+      if(typeof console!=='undefined')console.error('[savefly]',e);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+function frame(now){
+  const frameT0=PERF?performance.now():0;
+  const wall=Math.min(120,now-last);last=now;
+  const dt=Math.min(3,Math.max(.25,wall/16.67));
+  T+=dt;fr++;
+
+  if(booting){
+    drawBootScreen();present();
+    return;
+  }
+  if(syncing>0){
+    syncFrames++;
+    const _t0=performance.now();
+    const doneAll=simCatchUp(Date.now(),10);
+    syncMs+=performance.now()-_t0;
+    OUTQ.length=0;
+    syncing=doneAll?0:Math.max(1,targetStep(Date.now())-S.step);
+    if(!doneAll){
+      drawSyncScreen();present();
+      return;
+    }
+    lastSeed=S.seed;lastGen=S.gen;applyGen();hatching=1;
+    syncAliases();snapWeather();
+    if(FEED.metaWarn)log('LOG WARNING',FEED.metaWarn,C.y1);
+    if(FEED.ckReject)log('CHECKPOINT REJECTED',
+      'Snapshot did not match the log ('+FEED.ckReject+
+      '). Replayed from the event log instead.',C.y1);
+    log('SYNCED','Replayed '+syncTotal.toLocaleString('en-US')+
+      ' steps from epoch '+S.epoch+' boundary in '+Math.round(syncMs)+
+      ' ms. State hash '+simHash()+'.',C.g0);
+  }
+
+  acc+=wall;
+  if(acc>=SIMC.STEP_MS){
+    const budget=Math.floor(acc/SIMC.STEP_MS);
+    acc-=budget*SIMC.STEP_MS;
+    if(acc>SIMC.STEP_MS*4)acc=SIMC.STEP_MS*4;
+    const nowMs=Date.now();
+    const behind=targetStep(nowMs)-S.step;
+    if(behind>200){
+      syncTotal=behind;syncing=behind;syncMs=0;
+      return;
+    }
+    simCatchUp(nowMs,6);
+    if(syncing>0){applyGen();hatching=1;syncing=0;}
+  }
+  if(S.seed!==lastSeed){lastSeed=S.seed;lastGen=S.gen;}
+  syncAliases();
+  drainOUT(false);
+
+  const a=cl(acc/SIMC.STEP_MS,0,1);
+  RA=a;
+
+  flashT*=Math.pow(.86,dt);shake*=Math.pow(.88,dt);
+  webBuzz*=Math.pow(.972,dt);
+  for(const s of SPOKE)s.vib*=Math.pow(.965,dt);
+  for(let i=legs.length-1;i>=0;i--){
+    const l=legs[i];l.life+=dt;
+    l.vy+=.028*dt;l.x+=l.vx*dt;l.y+=l.vy*dt;l.rot+=l.vr*dt;
+    if(l.life>l.max)legs.splice(i,1);}
+  for(let i=fx.length-1;i>=0;i--){
+    const f=fx[i];f.life+=dt;
+    f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy*=Math.pow(.99,dt);
+    if(f.life>f.max)fx.splice(i,1);}
+  updFly(dt);updWeather(dt);musUpdate(dt);
+
+  if(shake>.6){OFFX=jit(shake,1);OFFY=jit(shake,5);}else{OFFX=0;OFFY=0;}
+  drawBack();
+  drawWeb();
+  Q.length=0;
+  for(const s of spiders)Q.push({z:spokePt(s.spoke,sT(s))[1],f:()=>drawSpider(s)});
+  Q.push({z:WEB.cy,f:drawFly});
+  for(const s of shots)Q.push({z:s.y+400,f:()=>drawShot(s)});
+  Q.sort((a,b)=>a.z-b.z);
+  for(const q of Q)q.f();
+  drawLegs();
+  drawFx();
+  drawWeatherFront();
+  OFFX=0;OFFY=0;
+  drawVig();
+  if(hatching>0){
+    pwash(C.sk0,hatching*hatching*.95);
+    hatching-=.030*dt;}
+  present();
+  if(PERF)perfTick(performance.now()-frameT0);
+  if(fr%15===0)ui();
+}
+let RA=0;
+function sT(s){return s.pt+(s.t-s.pt)*RA;}
+function sX(s){return s.px+(s.x-s.px)*RA;}
+function sY(s){return s.py+(s.y-s.py)*RA;}
+// Text is the only thing left on the canvas: the buffer has no fonts.
+// It is drawn after present(), on top of the pixels already output.
+let TEXTQ=[];
+function ptext(s,x,y,c,sz,al){
+  TEXTQ.push([s,x|0,y|0,c||'#e8e0f4',sz||8,al||'center']);
+}
+function flushText(){
+  if(!TEXTQ.length)return;
+  for(const t of TEXTQ){
+    P2D.font='700 '+t[4]+'px ui-monospace,monospace';
+    P2D.textAlign=t[5];P2D.textBaseline='top';
+    P2D.fillStyle=t[3];
+    P2D.fillText(t[0],t[1],t[2]);
+  }
+  TEXTQ.length=0;
+}
+function present(){
+  P2D.putImageData(IMG,0,0);
+  flushText();
+}
+function drawBootScreen(){
+  pr(0,0,RW,RH,C.n4);
+  pdith(0,0,RW,RH,C.n2,3,1);
+  const d=((T*.06)|0)%4;
+  ptext('CONNECTING TO CHAIN'+'...'.slice(0,d),160,104);
+}
+function drawSyncScreen(){
+  pr(0,0,RW,RH,C.n4);
+  pdith(0,0,RW,RH,C.n2,3,1);
+  const done=syncTotal-syncing;
+  const w=Math.round(180*cl(done/Math.max(1,syncTotal),0,1));
+  pr(70,110,180,7,C.n5);
+  pr(70,110,w,7,C.sk2);
+  pr(70,110,180,1,C.sk3);pr(70,116,180,1,C.sk3);
+  ptext('REPLAYING SHARED STATE',160,92,'#e8e0f4');
+  ptext(done.toLocaleString('en-US')+' / '+syntoStr(syncTotal)+' steps',160,124,'#9484ac');
+}
+function syntoStr(n){return n.toLocaleString('en-US');}
+startup().then(()=>requestAnimationFrame(loop));
+</script>
+</body>
+</html>

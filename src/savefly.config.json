@@ -1,0 +1,5 @@
+{
+  "mode": "provider",
+  "mint": "PASTE_TOKEN_MINT_HERE",
+  "ca":   "PASTE_TOKEN_MINT_HERE"
+}

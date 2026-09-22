@@ -1,0 +1,22 @@
+# Netlify / Cloudflare Pages
+# Same as nginx.conf. The key part: meta.json is never cached.
+
+/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Expose-Headers: Content-Range, Accept-Ranges, Content-Length
+
+/data/meta.json
+  Cache-Control: no-cache, must-revalidate
+
+/data/state.json
+  Cache-Control: public, max-age=5
+
+/data/events/*
+  Cache-Control: no-cache
+  Accept-Ranges: bytes
+
+/data/events/A/archive/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/src/savefly.html
+  Cache-Control: public, max-age=60

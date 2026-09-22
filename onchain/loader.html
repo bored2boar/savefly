@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAVEFLY</title>
+<style>
+html,body{margin:0;height:100%;background:#0a0612;color:#8cf0cc;
+  font:13px/1.6 ui-monospace,monospace}
+#w{height:100%;display:flex;align-items:center;justify-content:center;text-align:center}
+#w div{max-width:420px;padding:20px}
+b{color:#f4ecff}
+code{color:#9484ac;font-size:11px;word-break:break-all}
+</style>
+</head>
+<body>
+<div id="w"><div>
+  <b>SAVEFLY</b><br>
+  <span id="s">reading the chain...</span><br><br>
+  <code id="a"></code>
+</div></div>
+<script>
+/* Loader.
+   The game is not in this file - it lives in a Solana account.
+   This file only holds the address, reads it, checks the hash and runs it.
+
+   What this gives and what it does not:
+     gives  - verifiable code: the address is public, the hash is checked
+     does not give - "zero hosting". This file lives somewhere, and an
+              RPC node is required. Fully hosting-free does not exist,
+              and saying otherwise is not true.
+*/
+const ACCOUNT = new URLSearchParams(location.search).get('acc')
+  || 'PASTE_ACCOUNT_ADDRESS';
+const RPC = new URLSearchParams(location.search).get('rpc')
+  || 'https://api.mainnet-beta.solana.com';
+const EXPECT = new URLSearchParams(location.search).get('sha') || '';
+
+const s=document.getElementById('s'), a=document.getElementById('a');
+a.textContent=ACCOUNT;
+function say(t){s.textContent=t;}
+
+async function sha256hex(buf){
+  const h=await crypto.subtle.digest('SHA-256',buf);
+  return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+(async()=>{
+  try{
+    say('reading the chain...');
+    const r=await fetch(RPC,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getAccountInfo',
+        params:[ACCOUNT,{encoding:'base64'}]})});
+    const j=await r.json();
+    if(j.error||!j.result||!j.result.value)throw new Error('account not readable');
+    const bin=Uint8Array.from(atob(j.result.value.data[0]),c=>c.charCodeAt(0));
+    if(bin.length<42)throw new Error('payload too small');
+    const magic=String.fromCharCode(bin[0],bin[1],bin[2],bin[3]);
+    if(magic!=='SFLY')throw new Error('not a SAVEFLY payload');
+    const enc=bin[5];
+    const dv=new DataView(bin.buffer);
+    const len=dv.getUint32(6,true);
+    const shaHdr=[...bin.slice(10,42)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    const body=bin.slice(42,42+len);
+
+    say('verifying...');
+    const got=await sha256hex(body);
+    if(got!==shaHdr)throw new Error('hash in header does not match the bytes');
+    if(EXPECT&&EXPECT!==got)throw new Error('hash does not match the expected one');
+
+    say('unpacking...');
+    let html;
+    if(enc===1){
+      // brotli via DecompressionStream, if the browser supports it
+      if(typeof DecompressionStream==='undefined')
+        throw new Error('this browser cannot decompress brotli; use the raw payload');
+      const ds=new DecompressionStream('br');
+      const out=new Response(new Blob([body]).stream().pipeThrough(ds));
+      html=await out.text();
+    }else{
+      html=new TextDecoder().decode(body);
+    }
+
+    say('starting...');
+    document.open();document.write(html);document.close();
+  }catch(e){
+    say('failed: '+e.message);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+{
+  "name": "savefly",
+  "version": "2.5.0",
+  "private": true,
+  "description": "Deterministic on-chain-driven pixel creature. Sells spawn spiders, buys spawn shots, silk is the drawdown from ATH.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "serve": "node tools/serve.js",
+    "ingest": "node ingest/ingest.js",
+    "replay": "node tools/replay.js",
+    "profile": "node tools/profile.js",
+    "test": "node test/edge.test.js && node test/checkpoint.test.js && node test/storage.test.js && node test/rollover.test.js && node test/render-edge.test.js && node test/redundancy.test.js && node test/pixels.test.js && node test/robust.test.js && node test/rpc-edge.test.js && node test/consistency.test.js",
+    "test:shared": "node test/shared-state.test.js",
+    "test:feed": "node test/feed.test.js",
+    "checkpoint": "node tools/checkpoint.js",
+    "test:edge": "node test/edge.test.js",
+    "test:ck": "node test/checkpoint.test.js",
+    "test:storage": "node test/storage.test.js",
+    "test:perf": "node --expose-gc test/perf.test.js",
+    "test:render": "node test/render.test.js",
+    "test:econ": "node test/economy.test.js",
+    "test:rollover": "node test/rollover.test.js",
+    "test:render-edge": "node test/render-edge.test.js",
+    "test:load": "node test/ingest-load.test.js",
+    "test:swarm": "node test/swarm.test.js",
+    "test:redundancy": "node test/redundancy.test.js",
+    "verify": "node tools/verify.js",
+    "test:pixels": "node test/pixels.test.js",
+    "test:robust": "node test/robust.test.js",
+    "test:throughput": "node test/throughput.test.js",
+    "test:rpc": "node test/rpc-edge.test.js",
+    "test:consistency": "node test/consistency.test.js",
+    "test:fuzz": "node test/fuzz.test.js",
+    "rpc-check": "node tools/rpc-check.js",
+    "headers-check": "node tools/headers-check.js",
+    "monitor": "node tools/monitor.js data",
+    "make-og": "node tools/make-og.js",
+    "onchain:write": "node onchain/write.js",
+    "onchain:verify": "node onchain/verify.js",
+    "landing": "node tools/serve.js",
+    "make-strip": "node tools/make-strip.js"
+  },
+  "devDependencies": {
+    "canvas": "^3.0.0"
+  }
+}
