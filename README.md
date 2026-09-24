@@ -14,11 +14,13 @@ Render is 320×224, fixed palette, the browser does the upscaling.
 
 On September 3, 2026, researchers published the complete connectome of a male fruit fly - a map of more than 166,000 neurons and millions of neural connections. For the first time, the wiring of an entire fly nervous system could be studied as a complete system.
 
-SaveFly takes that breakthrough and turns it into a living experiment.
+**SaveFly turns that wiring into a living digital creature.**
 
-The fly you see is driven by the real structure of a real fly brain. Its behavior is built around the newly available neural wiring data - the same kind of circuitry researchers use to study how a fly processes sensory information and produces behavior.
+The fly you see is built from the neural architecture of a real fly.
 
-And now the fly is trapped.
+Her behavior comes from the wiring of a real fly brain - the same neural architecture that lets a real fly sense, react and move through the world.
+
+And now she is trapped.
 
 Her survival is tied to the market.
 
@@ -32,26 +34,39 @@ Save her, and the fly lives.
 
 Let her get wrapped, and the next generation hatches from the cocoon.
 
-This isn't just an animation. It's a public experiment built around a real biological connectome - where the market determines whether the fly survives.
+This isn't just an animation.
 
-SAVE FLY.
+It is a digital fly built from a real biological connectome, living inside a market that never stops moving.
+
+**Real fly. Real neural wiring. Real trades. One digital life.**
+
+**SAVE FLY.**
 
 ![SaveFly](Screenshot2.jpg)
 
-## Built inside Solana blockchain
+## The Game Lives on Solana
 
-SaveFly isn't just a web game reading blockchain data.
+SaveFly isn't a web game that happens to read blockchain data.
 
-Its world is connected directly to **Solana**.
+**The game itself lives on Solana.**
 
-The fly's state is driven by real on-chain activity: buys, sells, prices, blocks and transaction signatures are collected from the Solana network and become part of the simulation's canonical event stream.
+The game code is stored in a Solana account. The loader reads it directly from the chain, verifies its hash, and runs it in your browser.
+
+The fly's world is also driven by real on-chain activity: buys, sells, prices, blocks and transaction signatures are collected from the Solana network and become part of the simulation's canonical event stream.
 
 There is no fake market feed behind the fly.
 
-**The blockchain is the environment she lives in.**
+There is no hidden server deciding what you see.
 
-What happens to the fly is determined by what happens on-chain.
+**The code lives on-chain.
+The market lives on-chain.
+The fly lives in it.**
 
+What happens to her is determined by what happens on-chain.
+
+The blockchain isn't just where the token lives.
+
+**It is the environment she lives in.**
 
 ## The key property
 
