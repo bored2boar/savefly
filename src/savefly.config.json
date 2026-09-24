@@ -1,6 +1,6 @@
 {
   "mode": "provider",
-  "mint": "tokenaddress",
-  "ca":   "tokenaddress",
+  "mint": "to be announced",
+  "ca":   "to be announced",
   "buyUrl": "https://pump.fun/coin/{ca}"
 }
