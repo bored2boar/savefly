@@ -30,7 +30,7 @@ Save her, and the fly lives.
 
 Let her get wrapped, and the next generation hatches from the cocoon.
 
-This isn't just an animation. It's a public experiment built around a real biological connectome — where the market determines whether the fly survives.
+This isn't just an animation. It's a public experiment built around a real biological connectome - where the market determines whether the fly survives.
 
 SAVE FLY.
 
