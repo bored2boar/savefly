@@ -502,7 +502,7 @@ node tools/verify.js</pre>
     if(!v)return;
     CA=v;
     document.getElementById('ca').textContent=v;
-    var url='https://jup.ag/swap/SOL-'+v;
+        var url=BUY?BUY.replace('{ca}',v):('https://pump.fun/coin/'+v);
     document.querySelectorAll('[data-buy]').forEach(function(a){
       a.href=url;a.target='_blank';a.rel='noopener';});
   }
