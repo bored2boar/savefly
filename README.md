@@ -8,6 +8,32 @@ generation hatches from the cocoon.
 
 Render is 320×224, fixed palette, the browser does the upscaling.
 
+# Save Fly Narrative
+
+On September 3, 2026, researchers published the complete connectome of a male fruit fly - a map of more than 166,000 neurons and millions of neural connections. For the first time, the wiring of an entire fly nervous system could be studied as a complete system.
+
+SaveFly takes that breakthrough and turns it into a living experiment.
+
+The fly you see is driven by the real structure of a real fly brain. Its behavior is built around the newly available neural wiring data — the same kind of circuitry researchers use to study how a fly processes sensory information and produces behavior.
+
+And now the fly is trapped.
+
+Her survival is tied to the market.
+
+Every buy gives her a chance.
+Every sell brings the spiders closer.
+Every drawdown tightens the silk.
+
+The holders decide what happens next.
+
+Save her, and the fly lives.
+
+Let her get wrapped, and the next generation hatches from the cocoon.
+
+This isn't just an animation. It's a public experiment built around a real biological connectome — where the market determines whether the fly survives.
+
+SAVE FLY.
+
 ## The key property
 
 The state is derived **exclusively** from `(GENESIS_SEED, ordered event log,
