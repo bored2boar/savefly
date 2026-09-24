@@ -38,6 +38,21 @@ SAVE FLY.
 
 ![SaveFly](Screenshot2.jpg)
 
+## Built inside Solana blockchain
+
+SaveFly isn't just a web game reading blockchain data.
+
+Its world is connected directly to **Solana**.
+
+The fly's state is driven by real on-chain activity: buys, sells, prices, blocks and transaction signatures are collected from the Solana network and become part of the simulation's canonical event stream.
+
+There is no fake market feed behind the fly.
+
+**The blockchain is the environment she lives in.**
+
+What happens to the fly is determined by what happens on-chain.
+
+
 ## The key property
 
 The state is derived **exclusively** from `(GENESIS_SEED, ordered event log,
