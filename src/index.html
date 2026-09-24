@@ -512,6 +512,7 @@ node tools/verify.js</pre>
       .then(function(r){return r.ok?r.json():null;})
       .then(function(o){
         if(!o)return;
+                if(o.buyUrl)BUY=o.buyUrl;
         if(o.ca)apply(o.ca);
         if(o.mode==='provider')solo();
       })
