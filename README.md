@@ -8,6 +8,8 @@ generation hatches from the cocoon.
 
 Render is 320×224, fixed palette, the browser does the upscaling.
 
+![SaveFly](screenshot1.jpg)
+
 # Save Fly Narrative
 
 On September 3, 2026, researchers published the complete connectome of a male fruit fly - a map of more than 166,000 neurons and millions of neural connections. For the first time, the wiring of an entire fly nervous system could be studied as a complete system.
@@ -34,6 +36,8 @@ This isn't just an animation. It's a public experiment built around a real biolo
 
 SAVE FLY.
 
+![SaveFly](Screenshot2.jpg)
+
 ## The key property
 
 The state is derived **exclusively** from `(GENESIS_SEED, ordered event log,
@@ -42,6 +46,8 @@ on frame rate. That is why every viewer sees the same fly.
 
 You can check it by eye: the state hash sits in the top right corner, e.g.
 `SYNC 6a6853ff @23320`. Two windows side by side show the same string.
+
+![SaveFly](Screenshot3.jpg)
 
 ## Quick start
 
