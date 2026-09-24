@@ -1,5 +1,6 @@
 {
   "mode": "provider",
   "mint": "7Xgc5RacHtGzfhw2HukUBk5V986yBbvshr7rrCoopump",
-  "ca":   "7Xgc5RacHtGzfhw2HukUBk5V986yBbvshr7rrCoopump"
+  "ca":   "7Xgc5RacHtGzfhw2HukUBk5V986yBbvshr7rrCoopump",
+  "buyUrl": "https://pump.fun/coin/{ca}"
 }
