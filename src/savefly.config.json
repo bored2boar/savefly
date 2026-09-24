@@ -1,6 +1,6 @@
 {
   "mode": "provider",
-  "mint": "F9nCm1MYczKDcNwiRcz8HR82x3Gb1hy4G5u239Pvpump",
-  "ca":   "F9nCm1MYczKDcNwiRcz8HR82x3Gb1hy4G5u239Pvpump",
+  "mint": "tokenaddress",
+  "ca":   "tokenaddress",
   "buyUrl": "https://pump.fun/coin/{ca}"
 }
