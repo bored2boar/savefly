@@ -14,7 +14,7 @@ On September 3, 2026, researchers published the complete connectome of a male fr
 
 SaveFly takes that breakthrough and turns it into a living experiment.
 
-The fly you see is driven by the real structure of a real fly brain. Its behavior is built around the newly available neural wiring data — the same kind of circuitry researchers use to study how a fly processes sensory information and produces behavior.
+The fly you see is driven by the real structure of a real fly brain. Its behavior is built around the newly available neural wiring data - the same kind of circuitry researchers use to study how a fly processes sensory information and produces behavior.
 
 And now the fly is trapped.
 
