@@ -1,6 +1,6 @@
 {
   "mode": "provider",
-  "mint": "to be announced",
-  "ca":   "to be announced",
+  "mint": "AdFFU6EKuZ9kRkUizw5QJgF51S8YryLRXjpuQRSypump",
+  "ca":   "AdFFU6EKuZ9kRkUizw5QJgF51S8YryLRXjpuQRSypump",
   "buyUrl": "https://pump.fun/coin/{ca}"
 }
